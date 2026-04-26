@@ -5,7 +5,7 @@ BusyNow is a crowd visibility app for discovering nearby places, checking curren
 Live app:
 
 - Frontend: [https://busynow.app](https://busynow.app)
-- **BusyNow is only available in select Seattle Neighborhoods and Lower Manhattan. If you see an API error, that's the app blocking you ;)**
+- **BusyNow is only available in select Seattle Neighborhoods and Lower Manhattan. [If you see an API error, that's the app blocking you ;)]**
 
 ## At A Glance
 
