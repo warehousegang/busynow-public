@@ -1,201 +1,177 @@
-# BusyNow Platform Roadmap
+# BusyNow Implementation Roadmap
 
-BusyNow is a small production system designed to showcase practical platform engineering and SRE work, not just application development.
+This roadmap describes how BusyNow is planned to evolve as a product and as an operated service.
 
-## Positioning
+It is intentionally focused on implementation work, operating gaps, and sequencing. It is not a hiring document or a list of talking points.
 
-This project is meant to demonstrate:
+## Current Baseline
 
-- production-minded cloud architecture
-- infrastructure as code
-- secure delivery workflows
-- reliability thinking
-- cost-aware operations
-
-The app does not need to be huge to be credible. It needs to be well-run.
-
-## What Makes This Senior/Staff-Caliber Work
-
-The point of this roadmap is not to stack up impressive-sounding services. It is to demonstrate stronger engineering judgment over time.
-
-That includes:
-
-- making tradeoffs explicit
-- sequencing work by operational value
-- improving reliability without blindly increasing complexity
-- treating security and cost as design constraints
-- building operating mechanisms, not just feature code
-
-## Current Architecture
+BusyNow already has the core shape of the service in place:
 
 - React frontend served through CloudFront
-- Static assets hosted in S3
-- Express backend deployed on ECS Fargate
-- ALB in front of the API
+- static assets hosted in S3
+- Express backend running on ECS Fargate behind an ALB
 - Terraform-managed AWS infrastructure
-- GitHub Actions for build and deploy automation
-- Secrets handled through AWS Secrets Manager
+- GitHub Actions deployment workflows
+- WAF and origin protection around the API path
+- Google Places integration for nearby search
+- crowd check-ins and derived place status
 
-## Why It Is Valuable As A Platform Project
+That baseline is enough to run the product publicly. The roadmap below is about making it more reliable, easier to operate, and clearer to evolve.
 
-BusyNow already includes real operational concerns:
+## Roadmap Principles
 
-- edge routing and caching
-- bot and abuse prevention
-- authenticated CI/CD into AWS with OIDC
-- third-party dependency management
-- backend rollout and rollback workflows
-- separation between frontend and backend delivery
+- Keep the user-facing product simple while improving operating quality
+- Prefer small, reversible changes over large rewrites
+- Add complexity only when it clearly improves safety, clarity, or reliability
+- Treat cost and abuse prevention as part of the implementation work
+- Document each stage well enough that another engineer could operate it
 
-That is enough to tell a strong platform story when paired with good documentation, metrics, and operating practice.
-
-## Phase 1: Production Readiness
-
-Goal:
-Make the system understandable and operable by another engineer.
-
-Deliverables:
-
-- architecture diagram
-- deployment flow documentation
-- environment inventory
-- secrets inventory
-- dependency map for external services
-
-Why it matters:
-
-- establishes shared understanding before more automation is added
-- reduces accidental complexity during later reliability work
-
-## Phase 2: Observability
+## Phase 1: Stabilize The Current Public Service
 
 Goal:
-Make health, failure, and change visible.
+Make the current single-environment service more predictable to run day to day.
 
-Deliverables:
+Planned work:
 
-- structured request logging
-- CloudWatch dashboards
-- latency, error, and traffic metrics
-- alarms for unhealthy targets and elevated 5xx responses
-- uptime checks for homepage and health endpoints
+- clean up public and internal documentation so it matches the current implementation
+- tighten deployment steps for frontend and backend releases
+- verify rollback paths for both frontend assets and backend task definitions
+- document required runtime configuration and external dependencies
+- reduce rough edges in the public product experience on desktop and mobile
 
-Why it matters:
+Done when:
 
-- creates the signal layer needed for sane operations
-- turns debugging from guesswork into investigation
+- release steps are explicit and repeatable
+- rollback is documented and tested
+- public docs describe the system as it actually exists today
 
-## Phase 3: Reliability
-
-Goal:
-Operate with explicit service expectations.
-
-Deliverables:
-
-- SLIs for availability and latency
-- simple SLOs
-- error budget notes
-- degraded-mode behavior for upstream dependency failures
-- failure mode catalog
-
-Why it matters:
-
-- defines what reliability actually means for this service
-- makes tradeoffs around outages and partial failure easier to explain
-
-## Phase 4: Safer Delivery
+## Phase 2: Improve Product Data Quality
 
 Goal:
-Make changes repeatable, observable, and reversible.
+Make nearby results and crowd signals more useful without making the app heavy.
 
-Deliverables:
+Planned work:
 
-- stable frontend deploy workflow
-- stable backend deploy workflow
-- explicit rollback steps
-- release checklist
-- post-deploy smoke verification
+- improve how nearby places are selected and filtered
+- refine how place details are stored and updated after search or check-in
+- improve crowd-signal quality when a place has little or no recent data
+- make status freshness easier to understand in the UI
+- reduce confusing empty states and unclear result states
 
-Stretch options:
+Done when:
 
-- canary rollout
-- blue/green rollout
-- alarm-based rollback
+- users can more consistently find relevant places
+- status results are easier to interpret
+- low-data scenarios feel intentional instead of unfinished
 
-Why it matters:
-
-- proves changes can be deployed with control instead of confidence alone
-- keeps rollback as a normal operational capability
-
-## Phase 5: Environment Promotion
+## Phase 3: Add Better Visibility Into Runtime Health
 
 Goal:
-Show that production changes move through environments intentionally.
+Make it easier to understand whether the service is healthy and what changed when it is not.
 
-Deliverables:
+Planned work:
 
-- staging environment
-- build-once promote-forward artifact policy
-- GitHub environment protections
-- smoke test gates
+- structured backend request logging
+- dashboards for traffic, latency, errors, and deployment status
+- basic alarms for unhealthy targets and elevated failure rates
+- uptime checks for the homepage and health endpoint
+- clearer separation between application failures and upstream dependency failures
 
-Why it matters:
+Done when:
 
-- shows maturity beyond single-environment tinkering
-- demonstrates build-once, promote-forward discipline
+- routine health checks do not depend on manual guesswork
+- regressions can be detected quickly after deploys
+- debugging starts from signals instead of intuition
 
-## Phase 6: Security And Cost Governance
-
-Goal:
-Demonstrate production discipline beyond shipping features.
-
-Deliverables:
-
-- threat model
-- least-privilege reviews
-- secret rotation process
-- monthly cost review
-- budget alerting
-- WAF tuning and abuse protection notes
-
-Why it matters:
-
-- shows the system is being operated with business constraints in mind
-- connects cloud architecture decisions to real financial and abuse risks
-
-## Phase 7: Incident Response
+## Phase 4: Separate Environments Cleanly
 
 Goal:
-Show that the system can be operated under failure.
+Move from a single live stack toward clearer environment boundaries.
 
-Deliverables:
+Planned work:
 
-- runbooks for common incidents
-- incident review template
-- rollback drills
-- dependency outage exercises
+- finish the split between `dev` and `prod` infrastructure
+- define environment-specific configuration and secrets cleanly
+- promote immutable frontend and backend artifacts forward instead of rebuilding per environment
+- add environment protection rules around deploy workflows
+- make it clearer which changes are safe to test only in development first
 
-Why it matters:
+Done when:
 
-- demonstrates operational ownership under failure, not just during normal conditions
-- turns the project into a credible case study for reliability work
+- development and production have distinct responsibilities
+- releases move forward intentionally between environments
+- environment drift is easier to spot and correct
 
-## What This Shows In Interviews
+## Phase 5: Strengthen Security And Abuse Controls
 
-BusyNow becomes more compelling when described as:
+Goal:
+Protect the most expensive and most exposed paths without overcomplicating the runtime.
 
-"A small cloud service that I built and operated end to end, including infrastructure, deployment, security, edge protection, and reliability improvements."
+Planned work:
 
-That framing is stronger than simply presenting it as a frontend/backend app.
+- review direct-origin protections and internal-header enforcement
+- keep WAF rules aligned with observed traffic patterns
+- improve rate-limiting strategy for expensive endpoints
+- document secret rotation expectations and ownership
+- review IAM and deployment permissions for least privilege
 
-## How To Read Progress
+Done when:
 
-This roadmap should not be treated like a checklist where every advanced feature is automatically good. A later phase is only worth doing when it improves one of these:
+- the riskiest paths are intentionally protected
+- abuse controls are documented and measurable
+- security-sensitive configuration is easier to reason about
 
-- safety
-- clarity
-- reliability
-- operator confidence
-- cost control
+## Phase 6: Make Operations More Repeatable
 
-That is part of the point. Mature platform work is not just adding more machinery. It is knowing when the machinery is justified.
+Goal:
+Turn operational knowledge into documented procedures.
+
+Planned work:
+
+- write runbooks for deploy, rollback, and common failure cases
+- document expected responses to upstream outages and bad releases
+- add lightweight release verification and smoke checks
+- create a simple incident review template
+- record architecture and operations decisions that are easy to forget later
+
+Done when:
+
+- common incidents have a written response path
+- operating the service does not depend on memory alone
+- future changes have a clearer paper trail
+
+## Phase 7: Improve Cost Awareness And Sustainability
+
+Goal:
+Keep the service practical to run as usage and infrastructure maturity increase.
+
+Planned work:
+
+- review fixed AWS costs and high-risk variable costs
+- add budget alerts where they provide useful signal
+- track which protections reduce unnecessary paid API traffic
+- review whether current infrastructure choices still fit the product stage
+- capture cost tradeoffs in architecture decisions
+
+Done when:
+
+- cost surprises are less likely
+- infrastructure changes are easier to justify
+- reliability work and budget work support each other instead of competing
+
+## Near-Term Priorities
+
+The next practical milestones are:
+
+1. keep the public docs aligned with the current implementation
+2. finish stabilizing frontend and backend deployment workflows
+3. add basic runtime visibility through logs, dashboards, and alarms
+4. complete the environment split so `dev` and `prod` are no longer blurred
+5. write the first runbooks for deploy, rollback, and upstream failure handling
+
+## What This Roadmap Is Not
+
+This roadmap is not a promise to add every possible platform feature.
+
+BusyNow does not need complexity for its own sake. The intention is to keep the service understandable, improve it in public over time, and add operating depth only where it produces real value.

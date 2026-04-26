@@ -1,101 +1,92 @@
 # Operating BusyNow
 
-BusyNow is small on purpose, but it still behaves like a real service with real operational concerns.
+BusyNow is small, but it still has the same operational concerns as any public service: releases can fail, upstream dependencies can break, protections can drift, and costs can rise in the wrong places.
 
-## What This Project Teaches
+This document captures the main operating lessons from the project so far and the areas that still need more process and automation.
 
-BusyNow has been useful for practicing:
+## Operating Realities
 
-- secure GitHub-to-AWS authentication with OIDC
-- separate frontend and backend deployment flows
-- edge protection through CloudFront, ALB controls, and WAF
-- rollback planning for containerized services
-- third-party API dependency management
-- budget-aware infrastructure choices
+### Small services still need release discipline
 
-It has also been useful for practicing something that matters more at senior levels: turning a vague service into a system with clearer operating boundaries, clearer risks, and clearer upgrade paths.
-
-## Practical Lessons So Far
-
-### 1. Small apps still need real delivery discipline
-
-Even when the product is simple, deploys can fail in ways that matter:
+Even with a modest product surface, deploys can fail in ways that matter:
 
 - missing GitHub variables
-- missing OIDC provider setup
+- missing OIDC setup
 - IAM policy drift
 - stale frontend assets
 - runtime secret mismatches
 
-BusyNow became much more valuable as a platform project once deploy and rollback paths were made explicit.
+That makes deploy and rollback clarity more important than the size of the app.
 
-### 2. Abuse prevention matters before scale
+### Abuse prevention matters early
 
-The Google Places integration made cost exposure very real. That led to stronger design around:
+BusyNow depends on Google Places for nearby search. That creates both product value and cost exposure.
+
+Because of that, the service needs protections around:
 
 - edge filtering
-- direct origin protection
+- direct origin access
 - WAF tuning
 - internal header enforcement
-- thinking about rate limits and bot traffic early
+- rate limits on expensive paths
 
-### 3. The most expensive thing is not always traffic
+### Fixed infrastructure costs matter
 
-At low traffic, AWS request-based services often stay reasonable. Fixed costs like NAT gateways or always-on infrastructure can dominate. That changes how you think about architecture decisions when the product is still early.
+At low traffic, fixed AWS costs can matter more than request volume. Components like load balancers, NAT, or always-on runtime services can shape architecture decisions before scale does.
 
-### 4. Reliability starts with clarity
+### Reliability starts with clear boundaries
 
-A lot of production pain comes from ambiguity:
+Many operational problems come from ambiguity rather than raw failure:
 
-- which path is primary
+- which route is primary
 - which environment variable is actually used
 - what triggers a rollback
-- where a secret really comes from
+- where a secret is sourced from
+- which failure should surface to the user versus stay internal
 
-BusyNow keeps surfacing the importance of clean documentation, not just working code.
+Clean documentation reduces that ambiguity.
 
-## What Senior And Staff Growth Looks Like Here
+## What Has Helped So Far
 
-The goal is not to make BusyNow look artificially huge. The goal is to make it show better judgment.
+- separate frontend and backend deployment paths
+- immutable image tagging for backend releases
+- CloudFront in front of both the static frontend and protected API paths
+- OIDC-based GitHub-to-AWS authentication
+- explicit rollback workflows instead of relying on ad hoc recovery
 
-For this project, that means:
+These decisions do not remove operational risk, but they make the service easier to reason about and recover.
 
-- documenting why one deployment model is chosen over another
-- making cost tradeoffs visible instead of implicit
-- defining what "healthy" means before there is major traffic
-- tightening controls around the most expensive and abusable paths
-- writing down failure modes and recovery steps before an incident forces them
+## Current Gaps
 
-That is the kind of work that scales beyond a single repo because it shapes how systems are operated, not just how features are shipped.
+The main operating gaps today are:
 
-## What I Would Add To Make This Even Stronger
+- observability is still thinner than it should be
+- incident response steps are not fully documented
+- environment separation is still in progress
+- cost review is not yet formalized
+- degraded-mode behavior for upstream issues can be clearer
 
-- a short architecture decision record history
-- explicit SLO definitions
-- dashboard screenshots tied to real operating signals
-- sample incident writeups
-- staging-to-production promotion evidence
-- cost review snapshots over time
+## What Needs To Improve Next
 
-## What I’d Improve Next
+- structured backend logging
+- dashboards and alarms for core service health
+- clearer runbooks for deploy, rollback, and upstream dependency failure
+- stronger separation between development and production environments
+- lightweight release verification after deploys
+- regular cost and protection reviews for the most exposed paths
 
-- structured logging for backend requests
-- CloudWatch dashboards and alarms
-- staging environment promotion flow
-- runbooks for common incidents
-- SLOs for health and nearby search availability
-- budget alarms and monthly cost review
+## Operating Direction
 
-## Why This Matters For Platform And SRE Work
+The direction for BusyNow is straightforward:
 
-BusyNow is strong portfolio material because it lets me talk about:
+1. keep the runtime simple
+2. make deployments safer and easier to verify
+3. improve visibility into failures and regressions
+4. document common operating paths
+5. add more process only where it reduces real risk
 
-- system boundaries
-- edge security
-- delivery mechanics
-- cloud IAM
-- abuse resistance
-- recovery paths
-- production tradeoffs
+## Related Documents
 
-That story is often more compelling than just describing app features.
+- [Architecture](architecture.md)
+- [Implementation Roadmap](platform-roadmap.md)
+- [Engineering Principles And Tradeoffs](engineering-principles.md)

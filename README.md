@@ -79,6 +79,20 @@ The app itself is intentionally lightweight. The deeper value is in how it is op
 - [Operating BusyNow: Notes and Lessons](operating-busynow.md)
 - [Screenshots Guide](screenshots/README.md)
 
+## Screenshots
+
+### Landing page
+
+Current public landing page:
+
+![BusyNow landing page](screenshots/landing-page-april-2026.png)
+
+### First live API day
+
+Early app view from the first day BusyNow was live with the API connected:
+
+![BusyNow app view on the first live API day](screenshots/api-go-live-day-one-april-2026.png)
+
 ## Current Focus
 
 The next phase of BusyNow is less about adding app features and more about improving operational maturity:

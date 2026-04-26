@@ -1,62 +1,62 @@
 # BusyNow Engineering Principles And Tradeoffs
 
-This document exists to show how BusyNow is operated and evolved, not just what technologies it uses.
+This document describes the main engineering choices behind BusyNow and the tradeoffs that shaped them.
 
-## Design Principles
+## Core Principles
 
 ### 1. Reversibility Over Heroics
 
 Deployments should be easy to understand, easy to verify, and easy to undo.
 
-What that means in practice:
+In practice, that means:
 
 - explicit image tags instead of relying on `latest`
 - separate frontend and backend deploy paths
-- rollback workflows as part of normal delivery, not emergency improvisation
+- rollback workflows treated as a normal part of delivery
 
 ### 2. Protect Expensive Dependencies Early
 
-Google Places is useful, but it introduces cost and abuse risk. That makes edge protection part of the product design, not just an infrastructure afterthought.
+Google Places improves the product, but it also creates cost and abuse risk. That makes edge protection part of the application design, not a separate cleanup task.
 
-What that means in practice:
+In practice, that means:
 
 - CloudFront in front of the application
-- ALB protection using an internal header pattern
-- WAF and rate limiting
-- deliberate thinking about cost exposure from bot traffic
+- origin protection around the backend path
+- WAF rules and rate limiting
+- attention to traffic patterns that can trigger unnecessary paid API usage
 
-### 3. Favor Boring Runtime Paths
+### 3. Favor Simple Runtime Paths
 
-The runtime should be simple enough that failure domains are easy to reason about. Complexity is acceptable in CI/CD, Terraform, and documentation if it makes production operations safer.
+The runtime should stay simple enough that failure modes are understandable. Additional complexity is only useful when it makes the system safer or easier to operate.
 
-What that means in practice:
+In practice, that means:
 
 - static frontend hosting
-- single ECS service instead of premature orchestration complexity
-- rolling deployments first, then more advanced rollout patterns only when justified
+- a single ECS service instead of heavier orchestration
+- rolling deployments first, with more advanced rollout patterns added only when justified
 
-### 4. Security Should Match The Threat Model
+### 4. Match Controls To Real Risks
 
-BusyNow does not need every enterprise control on day one, but it does need the controls that address the actual risks it faces.
+BusyNow does not need every possible control at once, but it does need the controls that address the risks it actually has.
 
-Current risks that matter:
+Current risks include:
 
 - direct origin abuse
-- bot traffic triggering paid API calls
+- bot traffic causing paid upstream API calls
 - leaked or misused credentials
-- accidental deploy breakage
+- accidental release breakage
 
-### 5. Cost Is A Reliability Concern
+### 5. Treat Cost As An Engineering Constraint
 
-For a small service, runaway cost can be just as damaging as downtime. Budget awareness is part of production engineering.
+For a small service, cost problems can be as disruptive as availability problems. Budget awareness is part of operating the system responsibly.
 
-What that means in practice:
+In practice, that means:
 
 - reviewing fixed-cost AWS components
 - being intentional about WAF and bot-control settings
-- understanding where cloud cost is driven by architecture, not traffic
+- understanding where architecture, not traffic, is driving spend
 
-## Important Tradeoffs
+## Key Tradeoffs
 
 ### Simplicity vs Safer Rollouts
 
@@ -64,60 +64,58 @@ Current preference:
 
 - ECS rolling deployments
 
-Reasoning:
+Why:
 
 - simpler to operate
 - fewer moving parts
-- easier to reason about early in the project
+- easier to reason about at the current size of the service
 
-Future evolution:
+Future direction:
 
-- blue/green or canary once safer cutover value outweighs operational complexity
+- blue/green or canary rollout only if the added safety clearly outweighs the added complexity
 
-### Edge Security vs Friction
+### Edge Security vs Configuration Overhead
 
 Current preference:
 
-- CloudFront, ALB protections, and WAF around the expensive API path
+- CloudFront, backend origin protection, and WAF around the expensive API path
 
-Reasoning:
+Why:
 
 - protects cost-sensitive dependencies
 - reduces direct abuse
-- keeps the public product path usable while tightening the origin path
+- keeps the public product usable while tightening the backend path
 
 Tradeoff:
 
-- more configuration complexity
-- more places where routing and auth can drift if documentation is weak
+- more infrastructure configuration
+- more places where routing or protection can drift if documentation is weak
 
-### Product Complexity vs Operational Depth
+### Product Scope vs Operational Depth
 
 Current preference:
 
-- keep the app itself modest
-- invest more in reliability, delivery, and control-plane maturity
+- keep the product focused
+- invest more heavily in reliability, delivery, and runtime controls
 
-Reasoning:
+Why:
 
-- a small, well-operated service is better platform evidence than a larger, sloppier one
+- a smaller service is easier to operate well
+- operational quality creates more value than adding loosely maintained product surface area
 
-## Why This Matters For Senior And Staff Work
+## Decision Style
 
-Senior and staff platform work is not about picking the fanciest tools. It is about making good choices under constraints.
+BusyNow is intended to evolve through small, reviewable changes.
 
-BusyNow is meant to demonstrate:
+That means:
 
-- clear prioritization
-- tradeoff awareness
-- system evolution over time
-- cost and abuse awareness
-- operational ownership across delivery, runtime, and edge controls
+- choosing clear systems over impressive ones
+- documenting why a control or workflow exists
+- delaying complexity until there is a concrete operational reason for it
+- preferring tools and patterns that are easy to explain and maintain
 
-## What I Would Want Reviewers To Notice
+## Related Documents
 
-- the architecture is intentionally understandable
-- the deployment path is becoming safer and more explicit over time
-- the security controls are tied to real abuse and billing pressure
-- the roadmap is ordered by operational value, not just technical novelty
-- complexity is introduced deliberately, not automatically
+- [Architecture](architecture.md)
+- [Implementation Roadmap](platform-roadmap.md)
+- [Operating BusyNow](operating-busynow.md)

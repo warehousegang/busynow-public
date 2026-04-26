@@ -1,6 +1,6 @@
 # BusyNow Architecture
 
-BusyNow is intentionally a small application with a real production delivery and edge-security footprint.
+BusyNow is a small web application with separate frontend and backend delivery, AWS-hosted infrastructure, and protection around the most expensive API paths.
 
 ## High-Level Flow
 
@@ -17,96 +17,92 @@ flowchart LR
 
 ## Frontend Path
 
-- Static assets are stored in S3
+- static assets are stored in S3
 - CloudFront serves `https://busynow.app`
-- The landing page and app shell are delivered from the S3 origin
-- CloudFront invalidation is used after frontend deploys
+- the landing page and app shell are delivered from the S3 origin
+- frontend releases use CloudFront invalidation to refresh cached assets
 
 ## API Path
 
 - CloudFront routes `/places/*` to the backend origin
-- The ALB sits in front of the ECS service
-- The backend runs in ECS Fargate as a containerized Express service
-- Nearby search depends on Google Places
+- the ALB sits in front of the ECS service
+- the backend runs in ECS Fargate as a containerized Express service
+- nearby search depends on Google Places
+- place status is derived from recent BusyNow check-ins
 
 ## Edge Security Model
 
-- CloudFront forwards a protected internal header to the ALB
-- The ALB only forwards protected traffic to the backend path
+- CloudFront forwards a protected internal header to the backend origin
+- the backend path is designed to reject direct requests that do not match the expected internal protection
 - WAF rules and rate limits help reduce abusive traffic
-- Direct origin access is intentionally tightened
+- the API path receives stricter protection than the static frontend path because it is the most expensive runtime surface
 
 ## Delivery Model
 
 ### Frontend
 
 - GitHub Actions builds the Vite frontend
-- Build artifacts are synced to S3
-- A CloudFront invalidation refreshes the edge cache
+- build artifacts are synced to S3
+- CloudFront invalidation refreshes the public cache after release
 
 ### Backend
 
 - GitHub Actions builds a Docker image
-- The image is pushed to ECR with immutable tags
+- the image is pushed to ECR with immutable tags
 - ECS deploys explicit image tags instead of relying on `latest`
-- Rollback is based on known-good task definitions or image tags
+- rollback uses known-good task definitions or known-good image tags
 
-## Why These Choices
+## Main Infrastructure Choices
 
 ### CloudFront + S3 For The Frontend
 
-This keeps the frontend delivery model simple, cheap, and easy to invalidate globally after a release.
+This keeps frontend delivery simple and inexpensive while making it easy to publish static assets globally.
 
 ### ECS Fargate For The Backend
 
-This provides a managed container runtime without taking on Kubernetes complexity too early. It is a pragmatic fit for a small service that still needs real deployment and runtime discipline.
+This provides a managed container runtime without adding orchestration complexity that the service does not yet need.
 
 ### ALB In Front Of ECS
 
-The ALB provides a clear control point for routing, health checks, and origin protection. It also keeps the backend service model understandable for troubleshooting and rollout work.
+The ALB provides a clear control point for request routing, health checks, and backend access protection.
 
 ### Terraform For Infrastructure
 
-The goal is not just reproducibility. The goal is making infrastructure decisions reviewable, repeatable, and explainable over time.
+Terraform keeps infrastructure changes reviewable, repeatable, and easier to understand over time.
 
 ## Configuration And Secrets
 
 - GitHub Actions authenticates to AWS with OIDC
-- Runtime secrets are stored in AWS Secrets Manager
-- Backend dependencies like Google Places are injected at runtime
+- runtime secrets are stored in AWS Secrets Manager
+- backend dependencies like Google Places are injected at runtime
 
-## Architecture Tradeoffs
+## Current Tradeoffs
 
-### What This Optimizes For
+### What The Architecture Optimizes For
 
-- operator clarity
+- operational clarity
 - controlled delivery
-- cloud-managed primitives
-- cost awareness around third-party API traffic
+- cloud-managed infrastructure primitives
+- cost awareness around paid third-party API traffic
 
-### What This Does Not Yet Optimize For
+### What The Architecture Does Not Yet Optimize For
 
 - multi-region resilience
 - high-throughput global scale
-- zero-downtime advanced rollout patterns everywhere
-- deep platform self-service for other teams
+- advanced zero-downtime rollout patterns everywhere
+- generalized self-service platform tooling
 
-## Evolution Path
+## Planned Evolution
 
 The intended progression is:
 
 1. keep the runtime understandable
 2. improve observability and reliability controls
-3. add stronger environment promotion and rollout safety
-4. add complexity only when the operational payoff is clear
+3. separate environments more cleanly
+4. add more rollout and recovery safety where it is justified
 
-## Why This Architecture Matters
+## Related Documents
 
-The point of BusyNow is not just to show a React app talking to an API. It is to show:
-
-- edge routing decisions
-- container-based deployment
-- infrastructure as code
-- delivery automation
-- abuse prevention
-- operational tradeoffs around third-party APIs and cloud cost
+- [Implementation Roadmap](platform-roadmap.md)
+- [Engineering Principles And Tradeoffs](engineering-principles.md)
+- [Operating BusyNow](operating-busynow.md)
