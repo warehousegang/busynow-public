@@ -4,16 +4,7 @@ BusyNow is a small web application with separate frontend and backend delivery, 
 
 ## High-Level Flow
 
-```mermaid
-flowchart LR
-    U["User Browser"] --> CF["CloudFront"]
-    CF --> S3["S3 Frontend Bucket"]
-    CF --> ALB["Application Load Balancer"]
-    ALB --> ECS["ECS Fargate Service"]
-    ECS --> SM["AWS Secrets Manager"]
-    ECS --> GP["Google Places API"]
-    ECS --> DB["Postgres or Supabase (optional)"]
-```
+![BusyNow High-Level Flow](screenshots/busynow-high-level-flow.png)
 
 ## Frontend Path
 
