@@ -2,30 +2,31 @@
 
 BusyNow is a small web application with separate frontend and backend delivery, AWS-hosted infrastructure, and protection around the most expensive API paths.
 
-This page separates the current production shape from near-term planned architecture work so the public docs stay accurate about what is live today and what is coming next.
+This page separates the current production shape from the near-term target architecture so the public docs stay accurate about what is live today and what is planned next.
 
-## Current Production Flow
+## Near-Term Target Architecture
 
-```mermaid
-flowchart LR
-    U["User Browser"] --> CF["CloudFront"]
-    CF --> S3["S3 Frontend Bucket"]
-    CF --> ALB["Application Load Balancer"]
-    ALB --> ECS["ECS Fargate Service"]
-    ECS --> SM["AWS Secrets Manager"]
-    ECS --> GP["Google Places API"]
-    ECS --> DB["Postgres"]
-```
+![BusyNow planned production architecture](screenshots/busynow-target-architecture.svg)
 
-## Frontend Path
+This diagram reflects the architecture BusyNow is moving toward soon, not a claim that every component shown is already running in production today.
+
+The main planned changes in this target flow are:
+
+- a shared Redis cache, compatible with ElastiCache, for nearby places responses
+- middleware-level rate limiting before cache lookup and before outbound Google traffic grows
+- stale-cache fallback behavior when Google fails, rate limits are hit, or concurrency is exhausted
+- explicit backpressure around outbound Google requests through queueing or rejection behavior
+- structured CloudWatch-ready logging for cache hits, upstream calls, failures, rate limits, and latency
+- required Postgres persistence rather than documenting the database layer as optional
+
+## Current Production Notes
+
+The current production shape is still simpler than the target diagram above:
 
 - static assets are stored in S3
 - CloudFront serves `https://busynow.app`
 - the landing page and app shell are delivered from the S3 origin
 - frontend releases use CloudFront invalidation to refresh cached assets
-
-## API Path
-
 - CloudFront routes `/places/*` to the backend origin
 - the ALB sits in front of the ECS service
 - the backend runs in ECS Fargate as a containerized Express service
@@ -77,33 +78,6 @@ Terraform keeps infrastructure changes reviewable, repeatable, and easier to und
 - GitHub Actions authenticates to AWS with OIDC
 - runtime secrets are stored in AWS Secrets Manager
 - backend dependencies like Google Places are injected at runtime
-
-## Near-Term Planned Changes
-
-These changes are planned next, but they are not documented here as already implemented.
-
-```mermaid
-flowchart LR
-    U["User Browser"] --> CF["CloudFront"]
-    CF --> S3["S3 Frontend Bucket"]
-    CF --> ALB["Application Load Balancer"]
-    ALB --> ECS["ECS Fargate Service"]
-    ECS --> RL["Early Rate Limiting"]
-    RL --> RC["Shared Redis Cache"]
-    RC --> GP["Google Places API"]
-    ECS --> DB["Postgres"]
-    ECS --> CW["Structured Logs / CloudWatch"]
-    ECS --> SM["AWS Secrets Manager"]
-```
-
-Planned hardening around the places path includes:
-
-- a shared Redis cache for nearby search results instead of process-local caching
-- rate limiting earlier in the request path so expensive Google calls are protected sooner
-- stale-cache fallback behavior when Google fails, limits are hit, or concurrency is exhausted
-- explicit concurrency limits around outbound Google requests
-- structured JSON logging for cache behavior, upstream calls, failures, and latency
-- strict internal-header enforcement on API requests
 
 ## Current Tradeoffs
 
