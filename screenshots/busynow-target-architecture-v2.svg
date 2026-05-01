@@ -13,7 +13,7 @@
       .title { font: 700 30px Arial, Helvetica, sans-serif; fill: #0F172A; }
       .subtitle { font: 400 16px Arial, Helvetica, sans-serif; fill: #475569; }
       .section { font: 700 14px Arial, Helvetica, sans-serif; letter-spacing: 1.6px; }
-      .box-title { font: 700 16px Arial, Helvetica, sans-serif; fill: #111827; }
+      .box-title { font: 700 17px Arial, Helvetica, sans-serif; fill: #111827; }
       .box-copy { font: 400 12px Arial, Helvetica, sans-serif; fill: #334155; }
       .small-note { font: 600 11px Arial, Helvetica, sans-serif; fill: #374151; }
       .legend { font: 500 13px Arial, Helvetica, sans-serif; fill: #334155; }
@@ -24,8 +24,7 @@
   <rect width="1880" height="1040" rx="32" fill="#FAFBFF"/>
 
   <text x="940" y="52" text-anchor="middle" class="title">BusyNow - Planned Production Architecture (AWS)</text>
-  <text x="940" y="81" text-anchor="middle" class="subtitle">Target request flow with Redis or ElastiCache, graceful degradation,</text>
-  <text x="940" y="103" text-anchor="middle" class="subtitle">and outbound backpressure</text>
+  <text x="940" y="81" text-anchor="middle" class="subtitle">Target request flow with Redis or ElastiCache, graceful degradation, stale fallback, and outbound backpressure</text>
 
   <rect x="118" y="124" width="454" height="642" rx="24" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="2 6"/>
   <rect x="602" y="124" width="976" height="642" rx="24" stroke="#86EFAC" stroke-width="1.5" stroke-dasharray="2 6"/>
@@ -50,138 +49,123 @@
   <circle cx="351" cy="312" r="4.8" fill="#7C3AED"/>
   <path d="M336 279L322 296M336 279L349 310M322 296L349 310" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round"/>
   <text x="336" y="355" text-anchor="middle" class="box-title">CloudFront</text>
-  <text x="336" y="381" text-anchor="middle" class="box-copy">(CDN + Edge Cache + WAF)</text>
-  <rect x="256" y="391" width="160" height="50" rx="14" fill="#F8F5FF" stroke="#8B5CF6" stroke-width="1.4" stroke-dasharray="4 4"/>
-  <ellipse cx="294" cy="410" rx="15" ry="6" stroke="#7C3AED" stroke-width="2.2"/>
-  <path d="M279 410V425C279 428 286 431 294 431C302 431 309 428 309 425V410" stroke="#7C3AED" stroke-width="2.2"/>
-  <text x="350" y="418" text-anchor="middle" class="small-note">Edge Cache</text>
-  <text x="350" y="436" text-anchor="middle" class="small-note">(TTL)</text>
+  <text x="336" y="380" text-anchor="middle" class="box-copy">(CDN + Edge Cache + WAF)</text>
+  <rect x="252" y="390" width="168" height="50" rx="14" fill="#F8F5FF" stroke="#8B5CF6" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <ellipse cx="290" cy="409" rx="15" ry="6" stroke="#7C3AED" stroke-width="2.2"/>
+  <path d="M275 409V424C275 427 282 430 290 430C298 430 305 427 305 424V409" stroke="#7C3AED" stroke-width="2.2"/>
+  <text x="352" y="417" text-anchor="middle" class="small-note">Edge Cache</text>
+  <text x="352" y="435" text-anchor="middle" class="small-note">(TTL)</text>
 
-  <rect x="245" y="496" width="170" height="72" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
-  <path d="M268 532L279 512L291 525H283L290 550" stroke="#7C3AED" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="342" y="524" text-anchor="middle" class="box-copy" font-weight="600">Edge cache reduces</text>
-  <text x="342" y="546" text-anchor="middle" class="box-copy" font-weight="600">latency and asset cost</text>
+  <rect x="242" y="486" width="184" height="68" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <text x="334" y="512" text-anchor="middle" class="small-note">Cache hit reduces</text>
+  <text x="334" y="532" text-anchor="middle" class="small-note">latency and asset cost</text>
 
-  <rect x="550" y="528" width="170" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <path d="M596 568C596 555 620 555 620 568V600H596V568Z" stroke="#65A30D" stroke-width="2.4" fill="#ECFCCB"/>
-  <path d="M594 568C594 556 622 556 622 568" stroke="#65A30D" stroke-width="2.4"/>
-  <path d="M621 575L631 579" stroke="#65A30D" stroke-width="2.4" stroke-linecap="round"/>
-  <text x="635" y="612" text-anchor="middle" class="box-title">S3</text>
-  <text x="635" y="636" text-anchor="middle" class="box-copy">(Static Asset Hosting)</text>
+  <rect x="548" y="586" width="170" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M596 626C596 613 620 613 620 626V658H596V626Z" stroke="#65A30D" stroke-width="2.4" fill="#ECFCCB"/>
+  <path d="M594 626C594 614 622 614 622 626" stroke="#65A30D" stroke-width="2.4"/>
+  <path d="M621 633L631 637" stroke="#65A30D" stroke-width="2.4" stroke-linecap="round"/>
+  <text x="633" y="669" text-anchor="middle" class="box-title">S3</text>
+  <text x="633" y="693" text-anchor="middle" class="box-copy">(Static Asset Hosting)</text>
 
-  <rect x="612" y="292" width="180" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <circle cx="716" cy="320" r="11" stroke="#F97316" stroke-width="3"/>
-  <circle cx="687" cy="350" r="11" stroke="#F97316" stroke-width="3"/>
-  <rect x="724" y="343" width="18" height="18" rx="3" stroke="#F97316" stroke-width="3"/>
-  <path d="M709 328L693 342M723 325L739 345" stroke="#F97316" stroke-width="2.4" stroke-linecap="round"/>
-  <text x="702" y="398" text-anchor="middle" class="box-title">ALB</text>
-  <text x="702" y="422" text-anchor="middle" class="box-copy">(API Traffic)</text>
+  <rect x="618" y="286" width="168" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <circle cx="713" cy="320" r="11" stroke="#F97316" stroke-width="3"/>
+  <circle cx="684" cy="350" r="11" stroke="#F97316" stroke-width="3"/>
+  <rect x="721" y="343" width="18" height="18" rx="3" stroke="#F97316" stroke-width="3"/>
+  <path d="M706 328L690 342M720 325L736 345" stroke="#F97316" stroke-width="2.4" stroke-linecap="round"/>
+  <text x="702" y="392" text-anchor="middle" class="box-title">ALB</text>
+  <text x="702" y="417" text-anchor="middle" class="box-copy">(API Traffic)</text>
 
-  <rect x="808" y="292" width="190" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="804" y="286" width="186" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
   <rect x="874" y="320" width="28" height="32" stroke="#F97316" stroke-width="3"/>
   <line x1="880" y1="323" x2="880" y2="349" stroke="#F97316" stroke-width="2"/>
   <line x1="888" y1="323" x2="888" y2="349" stroke="#F97316" stroke-width="2"/>
   <line x1="896" y1="323" x2="896" y2="349" stroke="#F97316" stroke-width="2"/>
-  <text x="903" y="388" text-anchor="middle" class="box-title">Stateless API</text>
-  <text x="903" y="408" text-anchor="middle" class="box-title">Layer</text>
-  <text x="903" y="430" text-anchor="middle" class="box-copy">(ECS Fargate Service)</text>
+  <text x="897" y="386" text-anchor="middle" class="box-title">Stateless API Layer</text>
+  <text x="897" y="412" text-anchor="middle" class="box-copy">(ECS Fargate Service)</text>
 
-  <rect x="1014" y="292" width="186" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <path d="M1080 322L1107 341L1134 322" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M1107 341V367" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
-  <path d="M1082 368H1132" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
-  <text x="1107" y="388" text-anchor="middle" class="box-title">Early Rate</text>
-  <text x="1107" y="408" text-anchor="middle" class="box-title">Limiter</text>
-  <text x="1107" y="430" text-anchor="middle" class="box-copy">(Per-IP / Per-User)</text>
+  <rect x="1008" y="286" width="176" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M1067 322L1096 344L1125 322" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1096 344V368" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1071 369H1121" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+  <text x="1096" y="386" text-anchor="middle" class="box-title">Early Rate Limiter</text>
+  <text x="1096" y="412" text-anchor="middle" class="box-copy">(Per-IP / Per-User)</text>
 
-  <rect x="1222" y="292" width="194" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <ellipse cx="1319" cy="319" rx="24" ry="9" stroke="#7C3AED" stroke-width="3"/>
-  <path d="M1295 319V349C1295 354 1306 359 1319 359C1332 359 1343 354 1343 349V319" stroke="#7C3AED" stroke-width="3"/>
-  <path d="M1295 334C1295 339 1306 344 1319 344C1332 344 1343 339 1343 334" stroke="#7C3AED" stroke-width="3"/>
-  <text x="1319" y="388" text-anchor="middle" class="box-title">Shared Redis</text>
-  <text x="1319" y="408" text-anchor="middle" class="box-title">Cache</text>
-  <text x="1319" y="430" text-anchor="middle" class="box-copy">(Redis / ElastiCache)</text>
+  <rect x="1202" y="286" width="190" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <ellipse cx="1297" cy="319" rx="24" ry="9" stroke="#7C3AED" stroke-width="3"/>
+  <path d="M1273 319V349C1273 354 1284 359 1297 359C1310 359 1321 354 1321 349V319" stroke="#7C3AED" stroke-width="3"/>
+  <path d="M1273 334C1273 339 1284 344 1297 344C1310 344 1321 339 1321 334" stroke="#7C3AED" stroke-width="3"/>
+  <text x="1297" y="384" text-anchor="middle" class="box-title">Shared Response Cache</text>
+  <text x="1297" y="410" text-anchor="middle" class="box-copy">(Redis / ElastiCache)</text>
 
-  <rect x="1438" y="292" width="194" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <path d="M1497 325H1568" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
-  <path d="M1507 316L1497 325L1507 334" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M1558 316L1568 325L1558 334" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="1523" y="343" width="19" height="22" rx="3" stroke="#7C3AED" stroke-width="3"/>
-  <text x="1535" y="388" text-anchor="middle" class="box-title">Concurrency</text>
-  <text x="1535" y="408" text-anchor="middle" class="box-title">Guard</text>
-  <text x="1535" y="430" text-anchor="middle" class="box-copy">(Backpressure + Overflow)</text>
+  <rect x="1410" y="286" width="190" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M1468 323H1540" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1478 314L1468 323L1478 332" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1530 314L1540 323L1530 332" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="1494" y="341" width="20" height="24" rx="3" stroke="#7C3AED" stroke-width="3"/>
+  <text x="1505" y="384" text-anchor="middle" class="box-title">Concurrency Guard</text>
+  <text x="1505" y="410" text-anchor="middle" class="box-copy">(Backpressure)</text>
 
-  <rect x="1650" y="292" width="150" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <path d="M1725 319C1741 319 1754 332 1754 348C1754 370 1725 394 1725 394C1725 394 1696 370 1696 348C1696 332 1709 319 1725 319Z" fill="#EEF2FF" stroke="#2563EB" stroke-width="2.4"/>
-  <circle cx="1717" cy="343" r="8" fill="#34A853"/>
-  <circle cx="1733" cy="343" r="8" fill="#FBBC05"/>
-  <circle cx="1725" cy="356" r="8" fill="#EA4335"/>
-  <text x="1725" y="388" text-anchor="middle" class="box-title">Google Places</text>
-  <text x="1725" y="408" text-anchor="middle" class="box-title">API</text>
-  <text x="1725" y="430" text-anchor="middle" class="box-copy">(External Dependency)</text>
+  <rect x="1620" y="286" width="150" height="150" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M1695 319C1711 319 1724 332 1724 348C1724 370 1695 394 1695 394C1695 394 1666 370 1666 348C1666 332 1679 319 1695 319Z" fill="#EEF2FF" stroke="#2563EB" stroke-width="2.4"/>
+  <circle cx="1687" cy="343" r="8" fill="#34A853"/>
+  <circle cx="1703" cy="343" r="8" fill="#FBBC05"/>
+  <circle cx="1695" cy="356" r="8" fill="#EA4335"/>
+  <text x="1695" y="386" text-anchor="middle" class="box-title">Google Places API</text>
+  <text x="1695" y="412" text-anchor="middle" class="box-copy">(External Dependency)</text>
 
-  <rect x="760" y="528" width="170" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <rect x="820" y="560" width="28" height="26" rx="6" stroke="#EF4444" stroke-width="3"/>
-  <path d="M826 560V550C826 540 834 532 844 532C854 532 862 540 862 550V560" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
-  <text x="845" y="608" text-anchor="middle" class="box-title">AWS Secrets</text>
-  <text x="845" y="628" text-anchor="middle" class="box-title">Manager</text>
-  <text x="845" y="648" text-anchor="middle" class="box-copy">(Runtime Secrets)</text>
+  <rect x="758" y="586" width="176" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="818" y="618" width="28" height="26" rx="6" stroke="#EF4444" stroke-width="3"/>
+  <path d="M824 618V608C824 598 832 590 842 590C852 590 860 598 860 608V618" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+  <text x="846" y="666" text-anchor="middle" class="box-title">AWS Secrets Manager</text>
+  <text x="846" y="690" text-anchor="middle" class="box-copy">(Runtime Secrets)</text>
 
-  <rect x="952" y="528" width="170" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <ellipse cx="1037" cy="561" rx="20" ry="7" stroke="#2563EB" stroke-width="2.6"/>
-  <path d="M1017 561V592C1017 596 1026 601 1037 601C1048 601 1057 596 1057 592V561" stroke="#2563EB" stroke-width="2.6"/>
-  <path d="M1017 576C1017 580 1026 585 1037 585C1048 585 1057 580 1057 576" stroke="#2563EB" stroke-width="2.6"/>
-  <text x="1037" y="608" text-anchor="middle" class="box-title">Postgres</text>
-  <text x="1037" y="628" text-anchor="middle" class="box-copy">(Required System</text>
-  <text x="1037" y="646" text-anchor="middle" class="box-copy">of Record)</text>
+  <rect x="952" y="586" width="176" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <ellipse cx="1040" cy="620" rx="20" ry="7" stroke="#2563EB" stroke-width="2.6"/>
+  <path d="M1020 620V650C1020 654 1029 659 1040 659C1051 659 1060 654 1060 650V620" stroke="#2563EB" stroke-width="2.6"/>
+  <path d="M1020 635C1020 639 1029 644 1040 644C1051 644 1060 639 1060 635" stroke="#2563EB" stroke-width="2.6"/>
+  <text x="1040" y="666" text-anchor="middle" class="box-title">Postgres</text>
+  <text x="1040" y="690" text-anchor="middle" class="box-copy">(Required System of Record)</text>
 
-  <rect x="1144" y="528" width="170" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
-  <path d="M1193 575L1206 562L1217 572L1232 553L1246 569" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <line x1="1188" y1="590" x2="1254" y2="590" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>
-  <text x="1229" y="608" text-anchor="middle" class="box-title">CloudWatch</text>
-  <text x="1229" y="628" text-anchor="middle" class="box-title">Logs</text>
-  <text x="1229" y="648" text-anchor="middle" class="box-copy">(Structured JSON + Metrics)</text>
+  <rect x="1146" y="586" width="176" height="120" rx="16" fill="white" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M1194 634L1207 621L1219 631L1234 612L1248 628" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="1189" y1="649" x2="1255" y2="649" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>
+  <text x="1234" y="666" text-anchor="middle" class="box-title">CloudWatch Logs</text>
+  <text x="1234" y="690" text-anchor="middle" class="box-copy">(Structured JSON + Metrics)</text>
 
-  <rect x="586" y="464" width="234" height="58" rx="12" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
-  <text x="703" y="490" text-anchor="middle" class="small-note">Internal header enforced via</text>
-  <text x="703" y="508" text-anchor="middle" class="small-note">CloudFront + ALB rules</text>
+  <rect x="614" y="468" width="176" height="50" rx="12" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <text x="702" y="488" text-anchor="middle" class="small-note">Internal header enforced</text>
+  <text x="702" y="506" text-anchor="middle" class="small-note">at the protected origin path</text>
 
-  <rect x="1032" y="466" width="150" height="72" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
-  <text x="1107" y="492" text-anchor="middle" class="box-copy" font-weight="600">If limited, prefer</text>
-  <text x="1107" y="511" text-anchor="middle" class="box-copy" font-weight="600">stale cached</text>
-  <text x="1107" y="530" text-anchor="middle" class="box-copy" font-weight="600">response</text>
+  <rect x="1006" y="470" width="180" height="60" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <text x="1096" y="492" text-anchor="middle" class="small-note">Rate limit before cache lookup</text>
+  <text x="1096" y="512" text-anchor="middle" class="small-note">and before Google traffic grows</text>
 
-  <rect x="1244" y="466" width="150" height="72" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
-  <text x="1319" y="492" text-anchor="middle" class="box-copy" font-weight="600">TTL cache with</text>
-  <text x="1319" y="511" text-anchor="middle" class="box-copy" font-weight="600">stale fallback</text>
-  <text x="1319" y="530" text-anchor="middle" class="box-copy" font-weight="600">on failures</text>
+  <rect x="1210" y="470" width="176" height="60" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <text x="1298" y="492" text-anchor="middle" class="small-note">TTL cache plus stale fallback</text>
+  <text x="1298" y="512" text-anchor="middle" class="small-note">when upstream calls fail</text>
 
-  <rect x="1434" y="462" width="202" height="90" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
-  <text x="1535" y="488" text-anchor="middle" class="box-copy" font-weight="600">Queue or reject overflow.</text>
-  <text x="1535" y="507" text-anchor="middle" class="box-copy" font-weight="600">On saturation, return</text>
-  <text x="1535" y="526" text-anchor="middle" class="box-copy" font-weight="600">stale data when</text>
-  <text x="1535" y="545" text-anchor="middle" class="box-copy" font-weight="600">available.</text>
+  <rect x="1404" y="466" width="202" height="72" rx="14" fill="white" stroke="#A78BFA" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <text x="1505" y="488" text-anchor="middle" class="small-note">Queue or reject overflow.</text>
+  <text x="1505" y="508" text-anchor="middle" class="small-note">If saturated, serve stale data</text>
+  <text x="1505" y="528" text-anchor="middle" class="small-note">instead of calling Google.</text>
 
   <path d="M116 359H186" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
-  <path d="M486 359H612" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
-  <path d="M792 359H808" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
-  <path d="M998 359H1014" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
-  <path d="M1200 359H1222" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
-  <path d="M1416 359H1438" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
-  <path d="M1632 359H1650" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
-  <path d="M486 374V444C486 455 494 463 505 463H550V588" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
+  <path d="M486 359H618" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
+  <path d="M786 359H804" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
+  <path d="M990 359H1008" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
+  <path d="M1184 359H1202" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
+  <path d="M1392 359H1410" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
+  <path d="M1600 359H1620" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
 
-  <path d="M888 442V486H845V528" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
-  <path d="M888 442V486H1037V528" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
-  <path d="M888 442V486H1229V528" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
+  <path d="M486 372V490C486 502 496 512 508 512H548V646" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
+  <path d="M897 436V536H846V586" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
+  <path d="M897 436V536H1040V586" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
+  <path d="M897 436V536H1234V586" stroke="#0F172A" stroke-width="2.2" marker-end="url(#arrow-dark)"/>
 
-  <path d="M336 441V496" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
-  <path d="M1107 442V466" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
-  <path d="M1319 442V466" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
-  <path d="M1535 442V462" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
-  <path d="M1107 538V590H1144" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="2 6"/>
-  <path d="M1319 538V590H1314" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="2 6"/>
-  <path d="M1535 552V590H1314" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="2 6"/>
+  <path d="M336 440V486" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
+  <path d="M1096 436V470" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
+  <path d="M1298 436V470" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
+  <path d="M1505 436V466" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
 
   <rect x="238" y="818" width="1404" height="184" rx="18" fill="white" stroke="#CBD5E1" stroke-width="1.5" filter="url(#shadow)"/>
   <circle cx="292" cy="874" r="22" stroke="#F97316" stroke-width="3"/>
@@ -192,15 +176,15 @@
   <line x1="281" y1="890" x2="271" y2="900" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>
   <line x1="303" y1="890" x2="313" y2="900" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>
   <text x="352" y="860" class="box-title">How it works</text>
-  <text x="352" y="888" class="body">Users reach BusyNow through CloudFront. Static assets are served from S3, while API requests continue to the ALB and</text>
-  <text x="352" y="912" class="body">then the ECS API layer. Requests are rate-limited before the shared Redis or ElastiCache layer is consulted.</text>
-  <text x="352" y="936" class="body">If cached or stale data exists, BusyNow can avoid a Google call. When upstream calls are needed, a concurrency guard</text>
-  <text x="352" y="960" class="body">applies backpressure to protect costs and stability. Secrets, logging, and check-in data remain on AWS-managed services.</text>
+  <text x="352" y="888" class="body">Users reach BusyNow through CloudFront. Static assets are served from S3, while API requests continue to the ALB</text>
+  <text x="352" y="912" class="body">and the ECS API layer. Requests are rate-limited before the shared Redis or ElastiCache layer is consulted.</text>
+  <text x="352" y="936" class="body">If cached or stale data exists, BusyNow can avoid a Google call. If upstream calls are still needed, the concurrency</text>
+  <text x="352" y="960" class="body">guard adds backpressure so load spikes or Google failures do not turn into runaway cost or cascading failure.</text>
 
   <line x1="1300" y1="874" x2="1352" y2="874" stroke="#0F172A" stroke-width="2.4" marker-end="url(#arrow-dark)"/>
   <text x="1372" y="879" class="legend">Request / Response Flow</text>
   <line x1="1300" y1="916" x2="1352" y2="916" stroke="#7C3AED" stroke-width="2.2" stroke-dasharray="5 6" marker-end="url(#arrow-purple)"/>
-  <text x="1372" y="921" class="legend">Cache / Stale Fallback Behavior</text>
+  <text x="1372" y="921" class="legend">Cache / Fallback Behavior</text>
   <line x1="1300" y1="958" x2="1352" y2="958" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="2 6"/>
   <text x="1372" y="963" class="legend">Control / Dependency</text>
 </svg>
