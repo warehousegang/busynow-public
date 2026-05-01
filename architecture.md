@@ -2,9 +2,20 @@
 
 BusyNow is a small web application with separate frontend and backend delivery, AWS-hosted infrastructure, and protection around the most expensive API paths.
 
-## High-Level Flow
+This page separates the current production shape from near-term planned architecture work so the public docs stay accurate about what is live today and what is coming next.
 
-![BusyNow High-Level Flow](screenshots/busynow-high-level-flow.png)
+## Current Production Flow
+
+```mermaid
+flowchart LR
+    U["User Browser"] --> CF["CloudFront"]
+    CF --> S3["S3 Frontend Bucket"]
+    CF --> ALB["Application Load Balancer"]
+    ALB --> ECS["ECS Fargate Service"]
+    ECS --> SM["AWS Secrets Manager"]
+    ECS --> GP["Google Places API"]
+    ECS --> DB["Postgres"]
+```
 
 ## Frontend Path
 
@@ -19,7 +30,7 @@ BusyNow is a small web application with separate frontend and backend delivery, 
 - the ALB sits in front of the ECS service
 - the backend runs in ECS Fargate as a containerized Express service
 - nearby search depends on Google Places
-- place status is derived from recent BusyNow check-ins
+- place status is derived from recent BusyNow check-ins stored in Postgres
 
 ## Edge Security Model
 
@@ -67,6 +78,33 @@ Terraform keeps infrastructure changes reviewable, repeatable, and easier to und
 - runtime secrets are stored in AWS Secrets Manager
 - backend dependencies like Google Places are injected at runtime
 
+## Near-Term Planned Changes
+
+These changes are planned next, but they are not documented here as already implemented.
+
+```mermaid
+flowchart LR
+    U["User Browser"] --> CF["CloudFront"]
+    CF --> S3["S3 Frontend Bucket"]
+    CF --> ALB["Application Load Balancer"]
+    ALB --> ECS["ECS Fargate Service"]
+    ECS --> RL["Early Rate Limiting"]
+    RL --> RC["Shared Redis Cache"]
+    RC --> GP["Google Places API"]
+    ECS --> DB["Postgres"]
+    ECS --> CW["Structured Logs / CloudWatch"]
+    ECS --> SM["AWS Secrets Manager"]
+```
+
+Planned hardening around the places path includes:
+
+- a shared Redis cache for nearby search results instead of process-local caching
+- rate limiting earlier in the request path so expensive Google calls are protected sooner
+- stale-cache fallback behavior when Google fails, limits are hit, or concurrency is exhausted
+- explicit concurrency limits around outbound Google requests
+- structured JSON logging for cache behavior, upstream calls, failures, and latency
+- strict internal-header enforcement on API requests
+
 ## Current Tradeoffs
 
 ### What The Architecture Optimizes For
@@ -88,9 +126,10 @@ Terraform keeps infrastructure changes reviewable, repeatable, and easier to und
 The intended progression is:
 
 1. keep the runtime understandable
-2. improve observability and reliability controls
-3. separate environments more cleanly
-4. add more rollout and recovery safety where it is justified
+2. add the next maps experience and places-path hardening work
+3. improve observability and reliability controls
+4. separate environments more cleanly
+5. add more rollout and recovery safety where it is justified
 
 ## Related Documents
 

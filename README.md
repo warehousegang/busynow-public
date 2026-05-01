@@ -96,8 +96,10 @@ Early app view from the first day BusyNow was live with the API connected:
 
 ## Current Focus
 
-The next phase of BusyNow is less about adding app features and more about improving operational maturity:
+The next phase of BusyNow combines one product-facing addition with a reliability pass on the most expensive backend path:
 
+- a fuller maps view for nearby discovery
+- places-path hardening with shared cache, earlier protection controls, and graceful degradation
 - observability
 - service-level objectives
 - safer deployment workflows
