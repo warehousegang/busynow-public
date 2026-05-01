@@ -6,7 +6,7 @@ This page separates the current production shape from the near-term target archi
 
 ## Near-Term Target Architecture
 
-![BusyNow planned production architecture](screenshots/busynow-target-architecture.svg)
+![BusyNow planned production architecture](screenshots/busynow-target-architecture-v2.svg)
 
 This diagram reflects the architecture BusyNow is moving toward soon, not a claim that every component shown is already running in production today.
 
