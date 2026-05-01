@@ -10,11 +10,6 @@ Current public landing page:
 
 ![BusyNow landing page](landing-page-april-2026.png)
 
-### First day the API went live
-
-Early app view from the first day BusyNow was live with the API connected:
-
-![BusyNow app view on the first live API day](api-go-live-day-one-april-2026.png)
 
 ## Tips
 
