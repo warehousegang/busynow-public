@@ -6,16 +6,7 @@ The current public app still runs on the live `dev` stack. A separate `prod` Ter
 
 ## High-Level Flow
 
-```mermaid
-flowchart LR
-    U["User Browser"] --> CF["CloudFront"]
-    CF --> S3["S3 Frontend Bucket"]
-    CF --> ALB["Application Load Balancer"]
-    ALB --> ECS["ECS Fargate Service"]
-    ECS --> SM["AWS Secrets Manager"]
-    ECS --> GP["Google Places API"]
-    ECS --> DB["Postgres or Supabase (optional)"]
-```
+![BusyNow planned production architecture](screenshots/busynow-planned-production-architecture-aws.jpg)
 
 ## Frontend Path
 
