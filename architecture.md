@@ -1,37 +1,37 @@
 # BusyNow Architecture
 
-BusyNow is a small web application with separate frontend and backend delivery, AWS-hosted infrastructure, and protection around the most expensive API paths.
+BusyNow is a small web application with separate frontend and backend delivery, AWS-hosted infrastructure, and explicit protection around the most expensive API paths.
 
-This page separates the current production shape from the near-term target architecture so the public docs stay accurate about what is live today and what is planned next.
+The current public app still runs on the live `dev` stack. A separate `prod` Terraform skeleton now exists, but it is not yet the live traffic path.
 
-## Near-Term Target Architecture
+## High-Level Flow
 
-![BusyNow planned production architecture](screenshots/busynow-target-architecture-v2.svg)
+```mermaid
+flowchart LR
+    U["User Browser"] --> CF["CloudFront"]
+    CF --> S3["S3 Frontend Bucket"]
+    CF --> ALB["Application Load Balancer"]
+    ALB --> ECS["ECS Fargate Service"]
+    ECS --> SM["AWS Secrets Manager"]
+    ECS --> GP["Google Places API"]
+    ECS --> DB["Postgres or Supabase (optional)"]
+```
 
-This diagram reflects the architecture BusyNow is moving toward soon, not a claim that every component shown is already running in production today.
-
-The main planned changes in this target flow are:
-
-- a shared Redis cache, compatible with ElastiCache, for nearby places responses
-- middleware-level rate limiting before cache lookup and before outbound Google traffic grows
-- stale-cache fallback behavior when Google fails, rate limits are hit, or concurrency is exhausted
-- explicit backpressure around outbound Google requests through queueing or rejection behavior
-- structured CloudWatch-ready logging for cache hits, upstream calls, failures, rate limits, and latency
-- required Postgres persistence rather than documenting the database layer as optional
-
-## Current Production Notes
-
-The current production shape is still simpler than the target diagram above:
+## Frontend Path
 
 - static assets are stored in S3
 - CloudFront serves `https://busynow.app`
 - the landing page and app shell are delivered from the S3 origin
 - frontend releases use CloudFront invalidation to refresh cached assets
+
+## API Path
+
 - CloudFront routes `/places/*` to the backend origin
 - the ALB sits in front of the ECS service
 - the backend runs in ECS Fargate as a containerized Express service
 - nearby search depends on Google Places
-- place status is derived from recent BusyNow check-ins stored in Postgres
+- place status is derived from recent BusyNow check-ins
+- the `/places/*` path is the most tightly controlled runtime surface because it can trigger paid upstream API usage
 
 ## Edge Security Model
 
@@ -40,12 +40,34 @@ The current production shape is still simpler than the target diagram above:
 - WAF rules and rate limits help reduce abusive traffic
 - the API path receives stricter protection than the static frontend path because it is the most expensive runtime surface
 
+## Operational Bulkheads
+
+BusyNow uses a few simple bulkheads instead of a large platform abstraction layer.
+
+### Paid Upstream Bulkhead
+
+- nearby search is the only path that can directly trigger Google Places lookups
+- that path is protected more aggressively at the edge than the rest of the app
+- cached or degraded responses are preferred over uncontrolled upstream spend during failure
+
+### Release Bulkhead
+
+- frontend and backend are deployed independently
+- frontend delivery uses immutable artifacts and CloudFront invalidation
+- backend delivery uses explicit image tags and known-good rollback targets
+
+### Environment Bulkhead
+
+- the live service still runs from the `dev` stack today
+- the `prod` stack is scaffolded for a future environment split
+- the intended end state is promotion between environments instead of treating one stack as everything
+
 ## Delivery Model
 
 ### Frontend
 
 - GitHub Actions builds the Vite frontend
-- build artifacts are synced to S3
+- build artifacts are published once, then synced to S3 for release
 - CloudFront invalidation refreshes the public cache after release
 
 ### Backend
@@ -54,6 +76,7 @@ The current production shape is still simpler than the target diagram above:
 - the image is pushed to ECR with immutable tags
 - ECS deploys explicit image tags instead of relying on `latest`
 - rollback uses known-good task definitions or known-good image tags
+- failed verification is designed to trigger rollback instead of leaving a broken release in place
 
 ## Main Infrastructure Choices
 
@@ -100,13 +123,13 @@ Terraform keeps infrastructure changes reviewable, repeatable, and easier to und
 The intended progression is:
 
 1. keep the runtime understandable
-2. add the next maps experience and places-path hardening work
-3. improve observability and reliability controls
-4. separate environments more cleanly
-5. add more rollout and recovery safety where it is justified
+2. improve observability and reliability controls
+3. separate environments more cleanly
+4. add more rollout and recovery safety where it is justified
 
 ## Related Documents
 
+- [Reliability Controls: Runbooks And Bulkheads](reliability-controls.md)
 - [Implementation Roadmap](platform-roadmap.md)
 - [Engineering Principles And Tradeoffs](engineering-principles.md)
 - [Operating BusyNow](operating-busynow.md)

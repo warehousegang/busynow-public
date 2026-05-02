@@ -53,6 +53,7 @@ Clean documentation reduces that ambiguity.
 - CloudFront in front of both the static frontend and protected API paths
 - OIDC-based GitHub-to-AWS authentication
 - explicit rollback workflows instead of relying on ad hoc recovery
+- a first runbook set for both release actions and common incidents
 
 These decisions do not remove operational risk, but they make the service easier to reason about and recover.
 
@@ -61,16 +62,16 @@ These decisions do not remove operational risk, but they make the service easier
 The main operating gaps today are:
 
 - observability is still thinner than it should be
-- incident response steps are not fully documented
 - environment separation is still in progress
 - cost review is not yet formalized
 - degraded-mode behavior for upstream issues can be clearer
+- incident coverage is better than before, but drills and follow-through still need more structure
 
 ## What Needs To Improve Next
 
 - structured backend logging
 - dashboards and alarms for core service health
-- clearer runbooks for deploy, rollback, and upstream dependency failure
+- broader runbook coverage for secret rotation, cost review, and recurring failure patterns
 - stronger separation between development and production environments
 - lightweight release verification after deploys
 - regular cost and protection reviews for the most exposed paths
@@ -85,8 +86,34 @@ The direction for BusyNow is straightforward:
 4. document common operating paths
 5. add more process only where it reduces real risk
 
+## Current Runbooks
+
+The current internal runbooks now cover the most common release and recovery paths:
+
+- [Frontend Deploy](../runbooks/frontend-deploy.md)
+- [Frontend Rollback](../runbooks/frontend-rollback.md)
+- [Backend Deploy](../runbooks/backend-deploy.md)
+- [Backend Rollback](../runbooks/backend-rollback.md)
+- [Google Places Upstream Degradation](../runbooks/google-places-upstream-degradation.md)
+- [ECS Unhealthy After Deploy](../runbooks/ecs-unhealthy-after-deploy.md)
+- [Runtime Secret Or Environment Mismatch](../runbooks/runtime-secret-or-env-mismatch.md)
+- [Edge Protection Drift](../runbooks/edge-protection-drift.md)
+
+These runbooks reflect the current live setup where the public app is still served from the `dev` stack. They should be updated again once the separate `prod` environment becomes the live path.
+
+## Reliability Boundaries
+
+The main BusyNow operating bulkheads today are:
+
+- the expensive `/places/*` path is protected more aggressively than the static frontend path
+- frontend and backend release workflows stay separate so one rollback does not automatically imply the other
+- Google Places failures can fall back to cached or degraded behavior instead of always becoming a full outage
+- the next major boundary is finishing the move from one live stack to cleaner `dev` and `prod` separation
+
 ## Related Documents
 
 - [Architecture](architecture.md)
+- [Reliability Controls: Runbooks And Bulkheads](reliability-controls.md)
 - [Implementation Roadmap](platform-roadmap.md)
 - [Engineering Principles And Tradeoffs](engineering-principles.md)
+- [Runbooks Index](../runbooks/README.md)

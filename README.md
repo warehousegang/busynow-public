@@ -1,11 +1,15 @@
 # BusyNow
 
-BusyNow is a crowd visibility app for discovering nearby places, checking current crowd signals, and submitting one-tap updates without creating an account.
+BusyNow is a production-ready crowd visibility app for discovering nearby places, checking current crowd signals, and submitting one-tap updates without creating an account.
 
 Live app:
 
 - Frontend: [https://busynow.app](https://busynow.app)
-- **BusyNow is only available in select Seattle Neighborhoods and Lower Manhattan.**
+
+Infrastructure note:
+
+- the current public app is still backed by the single `dev` stack
+- a separate `prod` Terraform skeleton now lives in [`infra/live/prod/us-east-1`](../../infra/live/prod/us-east-1/README.md) for the eventual split into true `dev` and `prod` environments
 
 ## At A Glance
 
@@ -14,6 +18,7 @@ Live app:
 - Backend: Express on ECS Fargate behind an ALB
 - Infrastructure: Terraform on AWS
 - Delivery: GitHub Actions with AWS OIDC
+- Reliability: runbooks, protected API paths, and immutable deploy artifacts
 - Focus: platform engineering, SRE, and production operations
 
 ## Why This Is More Than An App
@@ -76,6 +81,7 @@ The app itself is intentionally lightweight. The deeper value is in how it is op
 
 - [Platform Engineering Roadmap](platform-roadmap.md)
 - [System Architecture](architecture.md)
+- [Reliability Controls: Runbooks And Bulkheads](reliability-controls.md)
 - [Engineering Principles And Tradeoffs](engineering-principles.md)
 - [Operating BusyNow: Notes and Lessons](operating-busynow.md)
 - [Screenshots Guide](screenshots/README.md)
@@ -96,16 +102,15 @@ Early app view from the first day BusyNow was live with the API connected:
 
 ## Current Focus
 
-The next phase of BusyNow combines one product-facing addition with a reliability pass on the most expensive backend path:
+The next phase of BusyNow is less about inventing first-time operations work and more about extending the operating model that is already in place:
 
-- a fuller maps view for nearby discovery
-- places-path hardening with shared cache, earlier protection controls, and graceful degradation
 - observability
 - service-level objectives
-- safer deployment workflows
+- post-deploy smoke checks
 - rollback drills
+- true `dev`/`prod` separation
 - cost visibility
-- incident runbooks
+- broader incident coverage beyond the first runbook set
 
 See the public roadmap:
 

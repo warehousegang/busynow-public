@@ -14,7 +14,7 @@ In practice, that means:
 - separate frontend and backend deploy paths
 - rollback workflows treated as a normal part of delivery
 
-### 2. Protect Expensive Dependencies Early
+### 2. Protect Expensive Dependencies With Bulkheads
 
 Google Places improves the product, but it also creates cost and abuse risk. That makes edge protection part of the application design, not a separate cleanup task.
 
@@ -23,6 +23,7 @@ In practice, that means:
 - CloudFront in front of the application
 - origin protection around the backend path
 - WAF rules and rate limiting
+- cached or degraded behavior before uncontrolled upstream spend
 - attention to traffic patterns that can trigger unnecessary paid API usage
 
 ### 3. Favor Simple Runtime Paths
@@ -91,6 +92,23 @@ Tradeoff:
 - more infrastructure configuration
 - more places where routing or protection can drift if documentation is weak
 
+### Protective Bulkheads vs Platform Simplicity
+
+Current preference:
+
+- a few explicit boundaries around the risky paths instead of a broader platform layer
+
+Why:
+
+- keeps the system understandable
+- reduces the blast radius of deploy, edge, and upstream failures
+- fits the current size of the service better than a more abstract control plane
+
+Tradeoff:
+
+- some protections are still process-driven rather than fully automated
+- the environment split is still incomplete while the public app runs on the live `dev` stack
+
 ### Product Scope vs Operational Depth
 
 Current preference:
@@ -117,5 +135,6 @@ That means:
 ## Related Documents
 
 - [Architecture](architecture.md)
+- [Reliability Controls: Runbooks And Bulkheads](reliability-controls.md)
 - [Implementation Roadmap](platform-roadmap.md)
 - [Operating BusyNow](operating-busynow.md)
