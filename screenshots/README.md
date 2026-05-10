@@ -16,6 +16,10 @@ Early app view from the first day BusyNow was live with the API connected:
 
 ![BusyNow app view on the first live API day](api-go-live-day-one-april-2026.png)
 
+## Architecture note
+
+The current live architecture diagram now lives in [architecture.md](../architecture.md). The older planned-architecture image is no longer the source of truth for the live system.
+
 ## Tips
 
 - Prefer clean browser screenshots with no local file paths or private tabs visible

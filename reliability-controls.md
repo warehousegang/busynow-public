@@ -2,26 +2,22 @@
 
 BusyNow is small, but it still has a few places where failures or abuse can get expensive quickly. The reliability model is built around two ideas:
 
-- runbooks for the operating paths that need to be repeatable
 - bulkheads that keep one class of failure from turning into a wider service problem
+- repeatable operating notes and runbooks for the paths that matter most
 
-## Current Runbook Coverage
+## Current Coverage
 
-Release and recovery runbooks now cover the main live deployment paths:
+The internal runbook set now covers:
 
-- [Frontend Deploy](../runbooks/frontend-deploy.md)
-- [Frontend Rollback](../runbooks/frontend-rollback.md)
-- [Backend Deploy](../runbooks/backend-deploy.md)
-- [Backend Rollback](../runbooks/backend-rollback.md)
+- frontend deploy and rollback
+- backend deploy and rollback
+- Google Places upstream degradation
+- ECS unhealthy after deploy
+- runtime secret or environment mismatch
+- edge protection drift
+- persistence backend unavailable
 
-Incident runbooks now cover the most likely operational failures in the current architecture:
-
-- [Google Places Upstream Degradation](../runbooks/google-places-upstream-degradation.md)
-- [ECS Unhealthy After Deploy](../runbooks/ecs-unhealthy-after-deploy.md)
-- [Runtime Secret Or Environment Mismatch](../runbooks/runtime-secret-or-env-mismatch.md)
-- [Edge Protection Drift](../runbooks/edge-protection-drift.md)
-
-That coverage matters because the public app is still served from the live `dev` stack. The runbooks describe the system as it actually runs today instead of assuming a future-state `prod` environment that is not yet carrying traffic.
+That coverage matters because the public app is still served from the live `dev` stack. The operating notes describe the system as it actually runs today instead of assuming a future-state `prod` environment that is not yet carrying traffic.
 
 ## Current Bulkheads
 
@@ -30,8 +26,9 @@ That coverage matters because the public app is still served from the live `dev`
 The most expensive user path is nearby place search because it can trigger paid Google Places calls. BusyNow protects that path with layered controls:
 
 - CloudFront in front of the public app
-- WAF and rate limits around the protected API path
+- WAF and Bot Control around the browser-facing `/places/*` path
 - internal-header enforcement between CloudFront, the ALB, and the backend
+- explicit CloudFront and ALB allowlists for `/places*`, `/status*`, and `/checkin*`
 
 The goal is to keep valid traffic flowing without leaving the paid upstream path open to easy abuse.
 
@@ -39,11 +36,25 @@ The goal is to keep valid traffic flowing without leaving the paid upstream path
 
 BusyNow does not let every Google Places problem become a full-service outage.
 
-- nearby search uses a per-process cache
-- stale cached results can be served in degraded mode
-- a call budget can fail closed with explicit cost-protection responses instead of unlimited upstream spend
+- nearby search is the only path that directly triggers Google Places
+- degraded or cost-protected behavior can stay scoped to the search path
+- `/status*` and `/checkin*` remain separate from the paid upstream lookup path
 
-That means Google degradation can stay scoped to the search path instead of turning into a broader backend incident.
+### Coordination Bulkhead
+
+BusyNow uses Redis as a very small shared coordination surface for check-ins.
+
+- Redis stores only ephemeral `checkin:{place_id}:{user_id}` cooldown keys
+- repeated check-ins refresh a 30 minute TTL instead of creating unbounded duplicate writes
+- the backend degrades safely when Redis is unavailable, so Redis failure does not become a full API outage
+
+This keeps horizontally scaled ECS tasks consistent without turning Redis into a general-purpose cache or source of truth.
+
+### Observability Bulkhead
+
+- usage telemetry is filtered to business-relevant `/places*` and `/checkin*` routes
+- structured single-line `[USAGE_EVENT]` and `[CHECKIN_EVENT]` logs are queryable in CloudWatch Insights
+- noisy paths like `/health` are intentionally excluded so operational queries stay focused
 
 ### Release Bulkhead
 
@@ -53,26 +64,28 @@ Frontend and backend delivery are intentionally separated.
 - backend deploys use explicit image tags in ECS instead of relying on `latest`
 - rollback paths exist for both halves of the system
 
-This reduces the chance that a bad release requires guesswork across the whole stack at once.
-
 ### Environment Bulkhead
 
 The current live system still runs on one stack, but the environment split is now scaffolded.
 
 - `dev` currently backs the live public app
-- `prod` now exists as a Terraform skeleton for a cleaner future separation
+- `prod` exists as a Terraform skeleton for a cleaner future separation
 
 That is not a full bulkhead yet, but it is the next structural boundary needed to make changes safer.
 
 ## What Still Needs Work
 
-- dashboards, alarms, and clearer service-level signals
+- regular SLO review habits and monthly budget retrospectives
 - regular rollback drills and post-incident review habits
 - broader runbook coverage for secret rotation and cost-review procedures
+- repeatable post-deploy checks for protected API path reachability and Redis connectivity
 - finishing the move from one live stack to distinct `dev` and `prod` responsibilities
 
 ## Related Documents
 
-- [Architecture](architecture.md)
+- [Current Live Architecture](architecture.md)
+- [Protected API Routing](api-routing.md)
+- [WAF API Behavior](waf-api-behavior.md)
+- [Redis Check-In Coordination](redis-architecture.md)
 - [Operating BusyNow](operating-busynow.md)
-- [Implementation Roadmap](platform-roadmap.md)
+- [Runbook Coverage Index](runbook-index.md)

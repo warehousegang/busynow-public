@@ -6,19 +6,20 @@ It is intentionally focused on implementation work, operating gaps, and sequenci
 
 ## Current Baseline
 
-BusyNow already has the core shape of the service in place:
+BusyNow already has the current live service shape in place:
 
 - React frontend served through CloudFront
 - static assets hosted in S3
 - Express backend running on ECS Fargate behind an ALB
-- Terraform-managed AWS infrastructure
-- GitHub Actions deployment workflows
-- WAF and origin protection around the API path
+- explicit CloudFront routing for `/places*`, `/api/places*`, `/status*`, and `/checkin*`
+- frontend WAF Bot Control with stricter protection on `/places/*`
+- stable anonymous browser IDs and selective structured usage telemetry
+- Redis-backed distributed check-in dedupe with graceful degradation
+- optional persistence backends depending on environment and runtime configuration
 - Google Places integration for nearby search
-- crowd check-ins and derived place status
 - deploy, rollback, and first-line incident runbooks for the live system
 
-That baseline is enough to run the product publicly. The roadmap below is about making it more reliable, easier to operate, and clearer to evolve.
+That baseline is enough to run the product publicly. The roadmap below is about making it easier to operate, verify, and evolve.
 
 ## Roadmap Principles
 
@@ -35,11 +36,11 @@ Make the current single-environment service more predictable to run day to day.
 
 Planned work:
 
-- clean up public and internal documentation so it matches the current implementation
-- tighten deployment steps for frontend and backend releases
+- keep public and internal documentation aligned with the current live implementation
+- tighten release verification steps for frontend and backend changes
 - verify rollback paths for both frontend assets and backend task definitions
 - document required runtime configuration and external dependencies
-- reduce rough edges in the public product experience on desktop and mobile
+- make route-level smoke checks more routine after deploys
 
 Done when:
 
@@ -60,30 +61,18 @@ Planned work:
 - make status freshness easier to understand in the UI
 - reduce confusing empty states and unclear result states
 
-Done when:
-
-- users can more consistently find relevant places
-- status results are easier to interpret
-- low-data scenarios feel intentional instead of unfinished
-
-## Phase 3: Add Better Visibility Into Runtime Health
+## Phase 3: Deepen Runtime Visibility
 
 Goal:
 Make it easier to understand whether the service is healthy and what changed when it is not.
 
 Planned work:
 
-- structured backend request logging
-- dashboards for traffic, latency, errors, and deployment status
-- basic alarms for unhealthy targets and elevated failure rates
-- uptime checks for the homepage and health endpoint
-- clearer separation between application failures and upstream dependency failures
-
-Done when:
-
-- routine health checks do not depend on manual guesswork
-- regressions can be detected quickly after deploys
-- debugging starts from signals instead of intuition
+- expand current selective structured logging into more routine operator queries
+- add dashboards for traffic, latency, errors, and deployment status
+- add basic alarms for unhealthy targets and elevated failure rates
+- improve saved CloudWatch Insights queries for usage and check-in events
+- make post-deploy verification less dependent on memory
 
 ## Phase 4: Separate Environments Cleanly
 
@@ -98,12 +87,6 @@ Planned work:
 - add environment protection rules around deploy workflows
 - make it clearer which changes are safe to test only in development first
 
-Done when:
-
-- development and production have distinct responsibilities
-- releases move forward intentionally between environments
-- environment drift is easier to spot and correct
-
 ## Phase 5: Strengthen Security And Abuse Controls
 
 Goal:
@@ -111,17 +94,11 @@ Protect the most expensive and most exposed paths without overcomplicating the r
 
 Planned work:
 
-- review direct-origin protections and internal-header enforcement
 - keep WAF rules aligned with observed traffic patterns
-- improve rate-limiting strategy for expensive endpoints
-- document secret rotation expectations and ownership
+- review whether `/places/*` Bot Control policy should stay strict or become more selective
+- document trusted verification traffic options more clearly
+- review direct-origin protections and internal-header enforcement
 - review IAM and deployment permissions for least privilege
-
-Done when:
-
-- the riskiest paths are intentionally protected
-- abuse controls are documented and measurable
-- security-sensitive configuration is easier to reason about
 
 ## Phase 6: Make Operations More Repeatable
 
@@ -130,17 +107,11 @@ Turn operational knowledge into documented procedures.
 
 Planned work:
 
-- extend the first runbook set with more recurring failure, secret, and cost procedures
-- document expected responses to upstream outages and bad releases
+- extend the current runbook set with more recurring failure, secret, and cost procedures
 - add lightweight release verification and smoke checks
 - create a simple incident review template
 - record architecture and operations decisions that are easy to forget later
-
-Done when:
-
-- common incidents and routine maintenance paths have a written response path
-- operating the service does not depend on memory alone
-- future changes have a clearer paper trail
+- make Redis, routing, and WAF verification part of normal deploy hygiene
 
 ## Phase 7: Improve Cost Awareness And Sustainability
 
@@ -152,14 +123,8 @@ Planned work:
 - review fixed AWS costs and high-risk variable costs
 - add budget alerts where they provide useful signal
 - track which protections reduce unnecessary paid API traffic
-- review whether current infrastructure choices still fit the product stage
+- review whether the current infrastructure choices still fit the product stage
 - capture cost tradeoffs in architecture decisions
-
-Done when:
-
-- cost surprises are less likely
-- infrastructure changes are easier to justify
-- reliability work and budget work support each other instead of competing
 
 ## Near-Term Priorities
 
@@ -167,7 +132,7 @@ The next practical milestones are:
 
 1. keep the public docs aligned with the current implementation
 2. finish stabilizing frontend and backend deployment workflows
-3. add basic runtime visibility through logs, dashboards, and alarms
+3. add more runtime visibility through logs, dashboards, and alarms
 4. complete the environment split so `dev` and `prod` are no longer blurred
 5. broaden runbook coverage and add repeatable smoke-check and incident-review habits
 

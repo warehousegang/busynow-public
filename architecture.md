@@ -1,126 +1,83 @@
 # BusyNow Architecture
 
-BusyNow is a small web application with separate frontend and backend delivery, AWS-hosted infrastructure, and explicit protection around the most expensive API paths.
+BusyNow is a small AWS-hosted web application with separate frontend and backend delivery, explicit edge routing, lightweight distributed coordination for check-ins, and selective operational telemetry.
 
-The current public app still runs on the live `dev` stack. A separate `prod` Terraform skeleton now exists, but it is not yet the live traffic path.
+The current public app is still served from the live `dev` stack. A separate `prod` Terraform skeleton now exists, but it is not yet the live traffic path.
 
-## High-Level Flow
+## BusyNow - Current Live Architecture (AWS)
 
-![BusyNow planned production architecture](screenshots/busynow-planned-production-architecture-aws.jpg)
+```mermaid
+flowchart LR
+    B["User Browser"] --> CF["CloudFront"]
+    WAF["Frontend WAF / Bot Control<br/>stricter on /places/*"] -. protects .-> CF
 
-## Frontend Path
+    CF -->|all non-API routes<br/>SPA fallback| S3["S3 Frontend Origin"]
+    CF -->|/places/* browser search path<br/>WAF-protected| ALB["Application Load Balancer"]
+    CF -->|/api/places/* CLI/testing path| ALB
+    CF -->|/status* /api/status*<br/>/checkin* /api/checkin*| ALB
+    CF -. injects x-internal-key .-> ALB
 
-- static assets are stored in S3
-- CloudFront serves `https://busynow.app`
-- the landing page and app shell are delivered from the S3 origin
-- frontend releases use CloudFront invalidation to refresh cached assets
+    D["Direct ALB internet access"] -. blocked .-> ALB
 
-## API Path
+    ALB -->|approved API paths + internal header only| ECS["ECS Fargate / Express API"]
+    ECS -->|nearby search only| GP["Google Places API"]
+    ECS -->|TTL check-in dedupe coordination<br/>30 minute cooldown| R["Redis / ElastiCache"]
+    ECS -->|environment-dependent persistence| DB["Postgres / Supabase (optional)"]
+    ECS --> CW["CloudWatch Logs / Insights"]
+    ECS --> SM["AWS Secrets Manager"]
+```
 
-- CloudFront routes `/places/*` to the backend origin
-- the ALB sits in front of the ECS service
-- the backend runs in ECS Fargate as a containerized Express service
-- nearby search depends on Google Places
-- place status is derived from recent BusyNow check-ins
-- the `/places/*` path is the most tightly controlled runtime surface because it can trigger paid upstream API usage
+Caption:
+CloudFront uses explicit API behaviors for `/places/*`, `/api/places/*`, `/status*`, `/api/status*`, `/checkin*`, and `/api/checkin*`; `/places/*` is additionally shaped by frontend WAF Bot Control; Redis provides 30 minute check-in dedupe coordination; and the API degrades safely when Redis is unavailable.
 
-## Edge Security Model
+## Current Request Flow
 
-- CloudFront forwards a protected internal header to the backend origin
-- the backend path is designed to reject direct requests that do not match the expected internal protection
-- WAF rules and rate limits help reduce abusive traffic
-- the API path receives stricter protection than the static frontend path because it is the most expensive runtime surface
+- CloudFront is the only public entry point
+- normal frontend routes continue to the S3 origin and SPA fallback
+- explicit API path families route to the backend ALB origin
+- CloudFront injects `x-internal-key` on API origin requests
+- the ALB only forwards approved API path families when that internal header matches
+- direct ALB access is not the public path and is blocked before listener evaluation by the current security posture
 
-## Operational Bulkheads
+## Anonymous Browser IDs
 
-BusyNow uses a few simple bulkheads instead of a large platform abstraction layer.
+- the frontend persists a stable anonymous UUID in `localStorage` under `bn_user_id`
+- every browser `fetch` request includes `x-bn-user-id`
+- BusyNow uses that value for lightweight telemetry and Redis-backed check-in dedupe only
+- this is not auth and not a user account system
 
-### Paid Upstream Bulkhead
+## Telemetry And Event Logging
 
-- nearby search is the only path that can directly trigger Google Places lookups
-- that path is protected more aggressively at the edge than the rest of the app
-- cached or degraded responses are preferred over uncontrolled upstream spend during failure
+- `[USAGE_EVENT]` is emitted only for business-relevant `/places*` and `/checkin*` routes
+- noisy routes like `/health` are intentionally excluded
+- the structured payload includes `type`, `method`, `path`, `user_id`, `neighborhood`, and `timestamp`
+- `[CHECKIN_EVENT]` is emitted for check-in `created` and `updated` actions with `place_id`, `user_id`, and `timestamp`
 
-### Release Bulkhead
+## Redis Coordination
 
-- frontend and backend are deployed independently
-- frontend delivery uses immutable artifacts and CloudFront invalidation
-- backend delivery uses explicit image tags and known-good rollback targets
+- Redis is used as ephemeral shared coordination state across ECS tasks
+- the key format is `checkin:{place_id}:{user_id}`
+- each key stores JSON and uses a 30 minute TTL (`1800` seconds)
+- the first check-in for the same `place_id + user_id` returns `checkin_action: "created"`
+- a repeat check-in during the cooldown refreshes the TTL and returns `checkin_action: "updated"`
+- Redis is not the source of truth for crowd status
+- Redis is not a general shared response cache
+- Redis is not a session or auth layer
 
-### Environment Bulkhead
+## `/places/*` vs `/api/places/*`
 
-- the live service still runs from the `dev` stack today
-- the `prod` stack is scaffolded for a future environment split
-- the intended end state is promotion between environments instead of treating one stack as everything
-
-## Delivery Model
-
-### Frontend
-
-- GitHub Actions builds the Vite frontend
-- build artifacts are published once, then synced to S3 for release
-- CloudFront invalidation refreshes the public cache after release
-
-### Backend
-
-- GitHub Actions builds a Docker image
-- the image is pushed to ECR with immutable tags
-- ECS deploys explicit image tags instead of relying on `latest`
-- rollback uses known-good task definitions or known-good image tags
-- failed verification is designed to trigger rollback instead of leaving a broken release in place
-
-## Main Infrastructure Choices
-
-### CloudFront + S3 For The Frontend
-
-This keeps frontend delivery simple and inexpensive while making it easy to publish static assets globally.
-
-### ECS Fargate For The Backend
-
-This provides a managed container runtime without adding orchestration complexity that the service does not yet need.
-
-### ALB In Front Of ECS
-
-The ALB provides a clear control point for request routing, health checks, and backend access protection.
-
-### Terraform For Infrastructure
-
-Terraform keeps infrastructure changes reviewable, repeatable, and easier to understand over time.
-
-## Configuration And Secrets
-
-- GitHub Actions authenticates to AWS with OIDC
-- runtime secrets are stored in AWS Secrets Manager
-- backend dependencies like Google Places are injected at runtime
-
-## Current Tradeoffs
-
-### What The Architecture Optimizes For
-
-- operational clarity
-- controlled delivery
-- cloud-managed infrastructure primitives
-- cost awareness around paid third-party API traffic
-
-### What The Architecture Does Not Yet Optimize For
-
-- multi-region resilience
-- high-throughput global scale
-- advanced zero-downtime rollout patterns everywhere
-- generalized self-service platform tooling
-
-## Planned Evolution
-
-The intended progression is:
-
-1. keep the runtime understandable
-2. improve observability and reliability controls
-3. separate environments more cleanly
-4. add more rollout and recovery safety where it is justified
+- `/status` and `/checkin` reach the backend correctly through `CloudFront -> ALB -> ECS`
+- `/api/places/*` also reaches the backend correctly
+- `/places/*` may appear to fall through to the SPA when tested with `curl` or HTTP-library clients
+- that is not a CloudFront routing defect
+- the live routing is correct; the differing behavior is caused by frontend WAF Bot Control enforcement on `/places/*`
+- the intended usage model is browser traffic on `/places/*` and CLI or scripted verification traffic on `/api/places/*`
 
 ## Related Documents
 
-- [Reliability Controls: Runbooks And Bulkheads](reliability-controls.md)
-- [Implementation Roadmap](platform-roadmap.md)
-- [Engineering Principles And Tradeoffs](engineering-principles.md)
+- [Protected API Routing](api-routing.md)
+- [WAF API Behavior](waf-api-behavior.md)
+- [Redis Check-In Coordination](redis-architecture.md)
+- [Reliability Controls](reliability-controls.md)
 - [Operating BusyNow](operating-busynow.md)
+- [Platform Engineering Roadmap](platform-roadmap.md)
