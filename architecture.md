@@ -6,26 +6,7 @@ The current public app is still served from the live `dev` stack. A separate `pr
 
 ## BusyNow - Current Live Architecture (AWS)
 
-```mermaid
-flowchart LR
-    B["User Browser"] --> CF["CloudFront"]
-    WAF["Frontend WAF / Bot Control<br/>stricter on /places/*"] -. protects .-> CF
-
-    CF -->|all non-API routes<br/>SPA fallback| S3["S3 Frontend Origin"]
-    CF -->|/places/* browser search path<br/>WAF-protected| ALB["Application Load Balancer"]
-    CF -->|/api/places/* CLI/testing path| ALB
-    CF -->|/status* /api/status*<br/>/checkin* /api/checkin*| ALB
-    CF -. injects x-internal-key .-> ALB
-
-    D["Direct ALB internet access"] -. blocked .-> ALB
-
-    ALB -->|approved API paths + internal header only| ECS["ECS Fargate / Express API"]
-    ECS -->|nearby search only| GP["Google Places API"]
-    ECS -->|TTL check-in dedupe coordination<br/>30 minute cooldown| R["Redis / ElastiCache"]
-    ECS -->|environment-dependent persistence| DB["Postgres / Supabase (optional)"]
-    ECS --> CW["CloudWatch Logs / Insights"]
-    ECS --> SM["AWS Secrets Manager"]
-```
+![BusyNow current live AWS architecture](screenshots/busynow-current-live-architecture-aws.svg)
 
 Caption:
 CloudFront uses explicit API behaviors for `/places/*`, `/api/places/*`, `/status*`, `/api/status*`, `/checkin*`, and `/api/checkin*`; `/places/*` is additionally shaped by frontend WAF Bot Control; Redis provides 30 minute check-in dedupe coordination; and the API degrades safely when Redis is unavailable.
