@@ -1,6 +1,6 @@
 # BusyNow Dependency Inventory
 
-Last updated: 2026-05-10
+Last updated: 2026-05-19
 
 This document summarizes the main live runtime and infrastructure dependencies that shape BusyNow's current public architecture.
 
@@ -18,17 +18,18 @@ This document summarizes the main live runtime and infrastructure dependencies t
   - serves the frontend origin and SPA fallback path
 
 - `AWS Application Load Balancer (ALB)`
-  - receives only approved API path families from CloudFront
-  - requires the internal edge header on forwarded API traffic
+  - sits in front of the live EKS backend ingress path
+  - forwards only approved API path families from CloudFront
 
-- `AWS ECS Fargate`
-  - runs the Express backend service
+- `AWS EKS`
+  - runs the live backend application
+  - the backend migration from ECS to EKS is now part of the live production story
 
 ## Coordination, Persistence, And Secrets
 
 - `Redis / ElastiCache`
   - used for 30 minute TTL-backed check-in dedupe coordination
-  - optional by configuration, but recommended for multi-task consistency
+  - optional by configuration, but recommended for multi-pod consistency
   - not a general cache or source of truth
 
 - `Postgres`
@@ -38,7 +39,10 @@ This document summarizes the main live runtime and infrastructure dependencies t
   - optional persistence backend when `SUPABASE_URL` and `SUPABASE_KEY` are configured
 
 - `AWS Secrets Manager`
-  - supplies runtime secrets such as API keys and other deployed environment secrets
+  - remains part of the wider infrastructure secret story
+
+- `Kubernetes Secret` objects
+  - currently provide the live backend runtime configuration inside EKS
 
 ## External Product Dependency
 
@@ -55,10 +59,11 @@ This document summarizes the main live runtime and infrastructure dependencies t
 
 ## Live Dependency Notes
 
-- CloudFront, the ALB, and ECS sit on the main public serving path and have the widest blast radius
+- CloudFront, the ALB, and Amazon EKS sit on the main public serving path and have the widest blast radius
 - Google Places is important, but only nearby search depends on it directly
 - Postgres and Supabase are environment-dependent persistence options, so neither should be described as the only required backend by default
 - Redis is intentionally scoped to ephemeral coordination so its failure mode is narrower than the core read path
+- the legacy ECS service and old `busynow-alb` remain relevant only as rollback assets during the current soak period, not as part of the live public path
 
 ## Related Documents
 

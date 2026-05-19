@@ -1,11 +1,11 @@
 # BusyNow Redis Check-In Coordination
 
-BusyNow uses Redis or ElastiCache as a lightweight shared coordination layer for repeat check-in suppression across ECS tasks.
+BusyNow uses Redis or ElastiCache as a lightweight shared coordination layer for repeat check-in suppression across EKS pods.
 
 ## What Redis Is
 
 - ephemeral distributed coordination
-- shared TTL-backed cooldown state across ECS tasks
+- shared TTL-backed cooldown state across EKS pods
 - the source of duplicate check-in suppression for the same place and anonymous browser ID
 
 ## What Redis Is Not
@@ -16,7 +16,7 @@ BusyNow uses Redis or ElastiCache as a lightweight shared coordination layer for
 
 ## Why Redis Exists
 
-ECS tasks do not share process memory. In-memory JavaScript cooldown state would be incorrect because each task would see a different view of recent user activity. Redis gives BusyNow one shared TTL-backed place to coordinate repeat check-ins.
+EKS pods do not share process memory. In-memory JavaScript cooldown state would be incorrect because each pod would see a different view of recent user activity. Redis gives BusyNow one shared TTL-backed place to coordinate repeat check-ins.
 
 ## Current Key Format
 
@@ -39,7 +39,7 @@ Redis stores JSON values with a 30 minute TTL (`1800` seconds). A representative
   "user_id": "550e8400-e29b-41d4-a716-446655440000",
   "place_id": "starbucks-ballard",
   "status": "busy",
-  "timestamp": "2026-05-10T14:30:00.000Z"
+  "timestamp": "2026-05-19T14:30:00.000Z"
 }
 ```
 

@@ -16,7 +16,7 @@ These notes describe how the current live routing and protection model affects v
 
 ## What To Check After Deploys
 
-- `/api/places/*` still reaches the backend through `CloudFront -> ALB -> ECS`
+- `/api/places/*` still reaches the backend through `CloudFront -> EKS-backed ALB -> EKS`
 - `/status*` still reaches the backend correctly
 - `/checkin*` still reaches the backend correctly
 - WAF policy still protects `/places/*` as intended

@@ -9,13 +9,15 @@ Live app:
 Infrastructure note:
 
 - the current public app is still served from the live `dev` stack
+- the live public backend now runs through `CloudFront -> EKS-backed ALB ingress`
+- the legacy ECS path is retained only as a short-term rollback asset during the current soak period
 - a separate `prod` Terraform skeleton now exists for the eventual environment split
 
 ## At A Glance
 
 - Product: lightweight crowd visibility for nearby places
 - Frontend: React served through CloudFront and S3
-- Backend: Express on ECS Fargate behind an ALB
+- Backend: Express on Amazon EKS behind an ALB ingress
 - Edge model: CloudFront is the only public entry point
 - Routing: explicit CloudFront behaviors for `/places*`, `/api/places*`, `/status*`, `/api/status*`, `/checkin*`, and `/api/checkin*`
 - Coordination: anonymous browser IDs plus Redis-backed check-in dedupe
@@ -40,11 +42,11 @@ BusyNow is intentionally small at the product layer and deeper at the systems la
 The interesting part is not only that a user can search for nearby places. The interesting part is the operating model around that flow:
 
 - how traffic is routed and protected at the edge
+- how the backend was migrated from ECS to EKS without changing the public frontend path
 - how browser-facing `/places/*` and CLI-friendly `/api/places/*` intentionally behave differently
 - how third-party API usage affects reliability and cost
 - how anonymous browser IDs and selective telemetry stay useful without adding auth
 - how lightweight distributed coordination is added without turning Redis into a general cache
-- how a modest service is made observable and operable over time
 
 ## What BusyNow Does
 
@@ -53,20 +55,20 @@ The interesting part is not only that a user can search for nearby places. The i
 - Shows lightweight crowd signals like `empty`, `moderate`, and `busy`
 - Accepts fast crowd check-ins without login friction
 - Uses anonymous browser IDs for telemetry and repeat check-in dedupe only
-- Routes protected API traffic through CloudFront, the ALB, and ECS
+- Routes protected API traffic through CloudFront, the ALB ingress, and EKS
 - Protects the browser-facing `/places/*` path more aggressively because it can trigger paid Google Places traffic
 
 ## Platform Highlights
 
 - CloudFront is the only public entry point
 - S3 serves the frontend origin and SPA fallback path
-- the ALB origin is used only for explicit API path families
+- the live backend runs on Amazon EKS behind an ALB ingress
 - CloudFront injects `x-internal-key` on backend origin requests
-- the ALB only forwards approved API paths when that internal header matches
+- the backend ingress only forwards approved API paths when that internal header matches
 - direct ALB access is blocked before listener evaluation by the current security posture
-- Redis provides TTL-backed check-in dedupe coordination across ECS tasks
+- Redis provides TTL-backed check-in dedupe coordination across EKS pods
 - CloudWatch Logs and Insights provide structured operational visibility
-- AWS Secrets Manager supplies runtime secrets
+- the backend migration from ECS to EKS kept the existing edge trust and routing model intact
 
 ## Public Documentation
 
@@ -83,19 +85,19 @@ The interesting part is not only that a user can search for nearby places. The i
 - [Platform Engineering Roadmap](platform-roadmap.md)
 - [Screenshots Guide](screenshots/README.md)
 
-## Screenshots
+## Current Frontend Views
 
 ### Landing page
 
-Current public landing page:
+Current MockMode landing page:
 
-![BusyNow landing page](screenshots/landing-page-april-2026.png)
+![BusyNow landing page mockmode](screenshots/landing-page-mockmode-may-2026.png)
 
-### First live API day
+### App preview
 
-Early app view from the first day BusyNow was live with the API connected:
+Current MockMode list view:
 
-![BusyNow app view on the first live API day](screenshots/api-go-live-day-one-april-2026.png)
+![BusyNow list view mockmode](screenshots/list-view-mockmode-may-2026.png)
 
 ## Current Focus
 
@@ -103,11 +105,11 @@ The next phase of BusyNow is less about inventing first-time operations work and
 
 - routine SLO and error-budget review
 - repeatable post-deploy smoke checks for `/api/places/*`, `/status*`, and `/checkin*`
-- rollback drills
+- rollback drills for the current EKS path
 - more CloudWatch dashboards and saved Insights queries
 - better separation between the live `dev` stack and future `prod`
 - continued abuse and cost control around Google Places traffic
 
 ## Public Notes
 
-The implementation repository may remain private while this public documentation stays shareable. That lets the system design, routing behavior, operational tradeoffs, and reliability model stay visible without exposing the source code itself.
+The implementation repository may remain private while this public documentation stays shareable. That lets the current product, architecture, migration story, routing behavior, operational tradeoffs, and reliability model stay visible without exposing the source code itself.

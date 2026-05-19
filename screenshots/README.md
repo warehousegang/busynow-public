@@ -2,23 +2,42 @@
 
 This directory holds public-facing BusyNow screenshots that can be shared alongside the public documentation.
 
-## Gallery
+## Current MockMode Gallery
 
 ### Landing page
 
-Current public landing page:
+Current MockMode landing page:
 
-![BusyNow landing page](landing-page-april-2026.png)
+![BusyNow landing page mockmode](landing-page-mockmode-may-2026.png)
 
-### First day the API went live
+### How it works
 
-Early app view from the first day BusyNow was live with the API connected:
+Current explanatory and preview section:
 
-![BusyNow app view on the first live API day](api-go-live-day-one-april-2026.png)
+![BusyNow how it works mockmode](how-it-works-mockmode-may-2026.png)
 
-## Architecture note
+### Place detail
 
-The current live architecture diagram now lives in [architecture.md](../architecture.md). The older planned-architecture image is no longer the source of truth for the live system.
+Current selected-place detail and update flow:
+
+![BusyNow place detail mockmode](place-detail-mockmode-may-2026.png)
+
+### List view
+
+Current nearby places list view:
+
+![BusyNow list view mockmode](list-view-mockmode-may-2026.png)
+
+### Map view
+
+Current nearby places map view:
+
+![BusyNow map view mockmode](map-view-mockmode-may-2026.png)
+
+## Older Reference Shots
+
+- `api-go-live-day-one-april-2026.png` captures an earlier milestone from the first live API day
+- older architecture images remain in the repo only as historical artifacts and are not the source of truth for the live system
 
 ## Tips
 

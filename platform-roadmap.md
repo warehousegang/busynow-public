@@ -10,7 +10,7 @@ BusyNow already has the current live service shape in place:
 
 - React frontend served through CloudFront
 - static assets hosted in S3
-- Express backend running on ECS Fargate behind an ALB
+- Express backend running on EKS behind an ALB ingress
 - explicit CloudFront routing for `/places*`, `/api/places*`, `/status*`, and `/checkin*`
 - frontend WAF Bot Control with stricter protection on `/places/*`
 - stable anonymous browser IDs and selective structured usage telemetry
@@ -38,15 +38,9 @@ Planned work:
 
 - keep public and internal documentation aligned with the current live implementation
 - tighten release verification steps for frontend and backend changes
-- verify rollback paths for both frontend assets and backend task definitions
+- verify rollback paths for both frontend assets and backend deployment revisions
 - document required runtime configuration and external dependencies
 - make route-level smoke checks more routine after deploys
-
-Done when:
-
-- release steps are explicit and repeatable
-- rollback is documented and tested
-- public docs describe the system as it actually exists today
 
 ## Phase 2: Improve Product Data Quality
 
@@ -98,7 +92,7 @@ Planned work:
 - review whether `/places/*` Bot Control policy should stay strict or become more selective
 - document trusted verification traffic options more clearly
 - review direct-origin protections and internal-header enforcement
-- review IAM and deployment permissions for least privilege
+- review IAM, ingress, and deployment permissions for least privilege
 
 ## Phase 6: Make Operations More Repeatable
 
@@ -111,7 +105,7 @@ Planned work:
 - add lightweight release verification and smoke checks
 - create a simple incident review template
 - record architecture and operations decisions that are easy to forget later
-- make Redis, routing, and WAF verification part of normal deploy hygiene
+- make Redis, routing, WAF, and EKS verification part of normal deploy hygiene
 
 ## Phase 7: Improve Cost Awareness And Sustainability
 

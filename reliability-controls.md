@@ -10,14 +10,14 @@ BusyNow is small, but it still has a few places where failures or abuse can get 
 The internal runbook set now covers:
 
 - frontend deploy and rollback
-- backend deploy and rollback
+- EKS backend deploy and validation
+- legacy ECS rollback path during soak
 - Google Places upstream degradation
-- ECS unhealthy after deploy
 - runtime secret or environment mismatch
 - edge protection drift
 - persistence backend unavailable
 
-That coverage matters because the public app is still served from the live `dev` stack. The operating notes describe the system as it actually runs today instead of assuming a future-state `prod` environment that is not yet carrying traffic.
+That coverage matters because the public app is still served from the live `dev` stack, but the backend path now runs on EKS instead of ECS. The operating notes describe the system as it actually runs today instead of assuming a future-state `prod` environment that is not yet carrying traffic.
 
 ## Current Bulkheads
 
@@ -48,7 +48,7 @@ BusyNow uses Redis as a very small shared coordination surface for check-ins.
 - repeated check-ins refresh a 30 minute TTL instead of creating unbounded duplicate writes
 - the backend degrades safely when Redis is unavailable, so Redis failure does not become a full API outage
 
-This keeps horizontally scaled ECS tasks consistent without turning Redis into a general-purpose cache or source of truth.
+This keeps horizontally scaled EKS pods consistent without turning Redis into a general-purpose cache or source of truth.
 
 ### Observability Bulkhead
 
@@ -61,7 +61,7 @@ This keeps horizontally scaled ECS tasks consistent without turning Redis into a
 Frontend and backend delivery are intentionally separated.
 
 - frontend deploys move immutable build artifacts through S3 and CloudFront
-- backend deploys use explicit image tags in ECS instead of relying on `latest`
+- backend deploys use explicit image tags on the EKS `Deployment` instead of relying on `latest`
 - rollback paths exist for both halves of the system
 
 ### Environment Bulkhead
@@ -80,6 +80,7 @@ That is not a full bulkhead yet, but it is the next structural boundary needed t
 - broader runbook coverage for secret rotation and cost-review procedures
 - repeatable post-deploy checks for protected API path reachability and Redis connectivity
 - finishing the move from one live stack to distinct `dev` and `prod` responsibilities
+- retiring the old ECS rollback path once the EKS soak period is complete
 
 ## Related Documents
 

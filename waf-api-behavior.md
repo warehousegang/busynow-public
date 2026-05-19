@@ -1,13 +1,13 @@
 # BusyNow WAF API Behavior
 
-This note documents the current live behavior observed during verification as of May 10, 2026.
+This note documents the current live behavior observed during verification.
 
 ## Current Behavior
 
 - `/places/*` is protected by frontend WAF Bot Control
 - `/api/places/*` is the better path for CLI and scripted verification traffic that should still reach the backend through CloudFront
-- `/checkin*` and `/status*` route correctly through `CloudFront -> ALB -> ECS`
-- direct ALB access is blocked before listener evaluation, so unauthenticated internet traffic does not reach the ALB routing layer
+- `/checkin*` and `/status*` route correctly through `CloudFront -> ALB -> EKS`
+- direct requests to protected routes on the EKS ALB without the internal header do not reach the backend path
 
 ## Important Observation
 
@@ -24,7 +24,7 @@ Because CloudFront also has SPA fallback behavior for the frontend origin, a blo
 
 This is not a CloudFront routing defect.
 
-The live CloudFront behaviors and ALB listener rules correctly include `/places/*`. The differing outcome between `/places/*` and `/api/places/*` is caused by WAF Bot Control enforcement on `/places/*`.
+The live CloudFront behaviors and EKS ALB listener rules correctly include `/places/*`. The differing outcome between `/places/*` and `/api/places/*` is caused by WAF Bot Control enforcement on `/places/*`.
 
 ## Intended Usage Model
 

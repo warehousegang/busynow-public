@@ -33,7 +33,7 @@ The runtime should stay simple enough that failure modes are understandable. Add
 In practice, that means:
 
 - static frontend hosting
-- a single ECS service instead of heavier orchestration
+- a single EKS-backed backend runtime instead of a broader platform stack
 - Redis only for lightweight TTL-backed coordination, not as a general cache or auth layer
 
 ### 4. Match Controls To Real Risks
@@ -92,7 +92,7 @@ Tradeoff:
 
 Current preference:
 
-- ECS rolling deployments
+- Kubernetes rolling deployments
 
 Why:
 
@@ -108,7 +108,7 @@ Current preference:
 
 Why:
 
-- ECS tasks do not share process memory
+- EKS pods do not share process memory
 - duplicate suppression needs a shared ephemeral state layer
 - the problem does not justify a heavier session or locking system
 
