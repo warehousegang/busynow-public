@@ -7,25 +7,47 @@ The current public app is still served from the live `dev` stack. A separate `pr
 ## BusyNow - Current Live Architecture (AWS)
 
 ```mermaid
-flowchart LR
-    U["User Browser"] --> CF["CloudFront"]
-    WAF["Frontend WAF / Bot Control<br/>stricter on /places/*"] -. protects .-> CF
+flowchart TB
+    subgraph EDGE["Traffic Path"]
+        U["User Browser"] --> DNS["Route 53 DNS"]
+        DNS --> CF["CloudFront"]
+        CF --> S3["S3 Frontend Bucket"]
+        CF --> ALB["AWS ALB for /api"]
+    end
 
-    CF --> S3["S3 Frontend Origin"]
-    CF --> ALB["EKS-backed Application Load Balancer"]
-    ALB --> K8S["Kubernetes Service / Backend Pod"]
-    K8S --> GP["Google Places API"]
-    K8S --> DB["Postgres or Supabase (optional)"]
-    K8S --> R["Redis TTL Coordination"]
-    K8S --> CW["CloudWatch Logs / Insights"]
+    subgraph GITOPS["GitOps + Control Plane"]
+        REPO["GitHub Repo<br/>Helm chart + values"] --> ARGO["Argo CD"]
+        ARGO --> ING["Ingress"]
+        ING --> ALB
+        ARGO --> SVC["Kubernetes Service"]
+        ARGO --> DEP["Deployment"]
+        ARGO --> HPA["HPA"]
+        HPA --> DEP
+    end
+
+    subgraph RUNTIME["EKS Runtime"]
+        SCHED["Kubernetes Scheduler"] --> NODES["EKS Worker Nodes"]
+        KARP["Karpenter"] --> NODES
+        ALB --> SVC
+        SVC --> PODS["Backend Pods"]
+        DEP --> PODS
+        NODES --> PODS
+    end
+
+    subgraph DEPS["Data + External Dependencies"]
+        PODS --> REDIS["ElastiCache Redis"]
+        PODS --> DB["Database"]
+        PODS --> GP["Google Places API"]
+    end
 ```
 
 Caption:
-CloudFront uses explicit API behaviors for `/places/*`, `/api/places/*`, `/status*`, `/api/status*`, `/checkin*`, and `/api/checkin*`; `/places/*` is additionally shaped by frontend WAF Bot Control; Redis provides 30 minute check-in dedupe coordination; and the API degrades safely when Redis is unavailable.
+Route 53 sends public traffic to CloudFront, which serves the S3 frontend by default and routes `/api` traffic to the EKS ingress ALB. Argo CD reconciles Helm-managed Kubernetes resources, HPA adjusts pod count, Karpenter manages worker-node capacity, and backend pods depend on Redis, the database, and Google Places.
 
 ## Frontend Path
 
 - static assets are stored in S3
+- Route 53 points `busynow.app` at CloudFront
 - CloudFront serves `https://busynow.app`
 - the landing page and app shell are delivered from the S3 origin
 - frontend releases use CloudFront invalidation to refresh cached assets
@@ -34,8 +56,8 @@ CloudFront uses explicit API behaviors for `/places/*`, `/api/places/*`, `/statu
 ## API Path
 
 - CloudFront routes `/places/*`, `/api/places/*`, `/status*`, `/api/status*`, `/checkin*`, and `/api/checkin*` to the backend origin
-- the live backend origin is an ALB managed for the EKS ingress path
-- the backend runs in Amazon EKS as a containerized Express service
+- the live backend origin is an AWS ALB managed by the Kubernetes ingress path
+- the backend runs in Amazon EKS as a containerized Express service behind a Kubernetes `Service`
 - nearby search depends on Google Places
 - place status is derived from recent BusyNow check-ins
 - usage telemetry is selectively emitted for `/places*` and `/checkin*`
@@ -92,8 +114,10 @@ CloudFront uses explicit API behaviors for `/places/*`, `/api/places/*`, `/statu
 
 - GitHub Actions builds a Docker image
 - the image is pushed to ECR with immutable tags
-- the current live EKS deploy path applies explicit image tags to the Kubernetes `Deployment`
-- rollback uses `kubectl rollout undo`, with ECS still available as a short-term soak fallback
+- the Helm chart and environment values live in GitHub and define the Kubernetes `Deployment`, `Service`, `Ingress`, and `HPA`
+- Argo CD reconciles the desired Git state into the live EKS cluster
+- HPA adjusts pod count and Karpenter adds node capacity when the cluster needs more room
+- rollback can use a previous image tag or earlier Git state, with Kubernetes rollout controls still available for fast recovery
 - failed verification is designed to trigger rollback instead of leaving a broken release in place
 
 ## Main Infrastructure Choices
@@ -105,6 +129,10 @@ This keeps frontend delivery simple and inexpensive while making it easy to publ
 ### Amazon EKS For The Backend
 
 This provides the Kubernetes runtime and operational surface BusyNow now uses for the live backend path.
+
+### Argo CD For Cluster Delivery
+
+Argo CD keeps the live cluster aligned with the Git-managed Helm configuration so infrastructure intent and application rollout state stay visible in one place.
 
 ### ALB In Front Of EKS
 
