@@ -13,11 +13,14 @@ BusyNow already has the current live service shape in place:
 - Express backend running on EKS behind an ALB ingress
 - explicit CloudFront routing for `/places*`, `/api/places*`, `/status*`, and `/checkin*`
 - frontend WAF Bot Control with stricter protection on `/places/*`
+- production delivery through Helm, Argo CD, immutable ECR images, and GitHub Actions
+- HPA pod scaling with Karpenter-managed elastic node capacity
 - stable anonymous browser IDs and selective structured usage telemetry
 - Redis-backed distributed check-in dedupe with graceful degradation
 - optional persistence backends depending on environment and runtime configuration
 - Google Places integration for nearby search
 - deploy, rollback, and first-line incident runbooks for the live system
+- a production-owned public service with ephemeral development infrastructure
 
 That baseline is enough to run the product publicly. The roadmap below is about making it easier to operate, verify, and evolve.
 
@@ -32,7 +35,7 @@ That baseline is enough to run the product publicly. The roadmap below is about 
 ## Phase 1: Stabilize The Current Public Service
 
 Goal:
-Make the current single-environment service more predictable to run day to day.
+Make the production service more predictable to operate day to day.
 
 Planned work:
 
@@ -41,6 +44,7 @@ Planned work:
 - verify rollback paths for both frontend assets and backend deployment revisions
 - document required runtime configuration and external dependencies
 - make route-level smoke checks more routine after deploys
+- exercise GitOps drift, rollback, pod-failure, and capacity-scaling procedures regularly
 
 ## Phase 2: Improve Product Data Quality
 
@@ -66,20 +70,22 @@ Planned work:
 - add dashboards for traffic, latency, errors, and deployment status
 - add basic alarms for unhealthy targets and elevated failure rates
 - improve saved CloudWatch Insights queries for usage and check-in events
+- connect alert signals to documented first-response procedures
 - make post-deploy verification less dependent on memory
 
-## Phase 4: Separate Environments Cleanly
+## Phase 4: Mature Environment Promotion
 
 Goal:
-Move from a single live stack toward clearer environment boundaries.
+Keep production stable while making temporary development environments easier to create, verify, and remove.
 
 Planned work:
 
-- finish the split between `dev` and `prod` infrastructure
-- define environment-specific configuration and secrets cleanly
-- promote immutable frontend and backend artifacts forward instead of rebuilding per environment
+- keep `prod` as the sole owner of the public service
+- preserve `dev` as an ephemeral, non-production sandbox
+- codify repeatable development environment create and teardown workflows
+- promote immutable frontend and backend artifacts without rebuilding them per environment
 - add environment protection rules around deploy workflows
-- make it clearer which changes are safe to test only in development first
+- make configuration and secret boundaries explicit
 
 ## Phase 5: Strengthen Security And Abuse Controls
 
@@ -127,8 +133,8 @@ The next practical milestones are:
 1. keep the public docs aligned with the current implementation
 2. finish stabilizing frontend and backend deployment workflows
 3. add more runtime visibility through logs, dashboards, and alarms
-4. complete the environment split so `dev` and `prod` are no longer blurred
-5. broaden runbook coverage and add repeatable smoke-check and incident-review habits
+4. make ephemeral development creation and teardown more repeatable
+5. broaden runbook coverage and establish smoke-check, rollback, and incident-review cadence
 
 ## What This Roadmap Is Not
 

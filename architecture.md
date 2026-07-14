@@ -1,48 +1,54 @@
 # BusyNow Architecture
 
-BusyNow is a small AWS-hosted web application with separate frontend and backend delivery, explicit edge routing, lightweight distributed coordination for check-ins, and selective operational telemetry.
+BusyNow is a production AWS application with separate frontend and backend delivery, explicit edge routing, Kubernetes-based runtime orchestration, lightweight distributed coordination for check-ins, and selective operational telemetry.
 
-The current public app is still served from the live `dev` stack. A separate `prod` Terraform skeleton now exists, but it is not yet the live traffic path.
+The public application runs on the production stack. Development infrastructure is ephemeral and remains torn down by default.
 
 ## BusyNow - Current Live Architecture (AWS)
 
 ```mermaid
 flowchart TB
-    subgraph EDGE["Traffic Path"]
+    subgraph EDGE["Public Edge"]
         U["User Browser"] --> DNS["Route 53 DNS"]
         DNS --> CF["CloudFront"]
-        CF --> S3["S3 Frontend Bucket"]
-        CF --> ALB["AWS ALB for /api"]
+        WAF["AWS WAF + Bot Control"] -. protects .-> CF
+        CF -->|"frontend routes + SPA fallback"| S3["S3 Frontend Origin"]
+        CF -->|"explicit API behaviors<br/>inject x-internal-key"| ALB["Application Load Balancer"]
+        DIRECT["Direct ALB Request"] -. blocked .-> ALB
     end
 
-    subgraph GITOPS["GitOps + Control Plane"]
-        REPO["GitHub Repo<br/>Helm chart + values"] --> ARGO["Argo CD"]
-        ARGO --> ING["Ingress"]
-        ING --> ALB
+    subgraph GITOPS["GitOps Control Plane"]
+        REPO["GitHub<br/>Helm chart + prod values"] --> ARGO["Argo CD"]
+        ARGO --> ING["Kubernetes Ingress"]
         ARGO --> SVC["Kubernetes Service"]
         ARGO --> DEP["Deployment"]
-        ARGO --> HPA["HPA"]
+        ARGO --> HPA["Horizontal Pod Autoscaler"]
+        ING -. configures .-> ALB
         HPA --> DEP
     end
 
-    subgraph RUNTIME["EKS Runtime"]
+    subgraph RUNTIME["Amazon EKS Runtime"]
+        ALB --> SVC
+        SVC --> PODS["Express Backend Pods"]
+        DEP --> PODS
         SCHED["Kubernetes Scheduler"] --> NODES["EKS Worker Nodes"]
         KARP["Karpenter"] --> NODES
-        ALB --> SVC
-        SVC --> PODS["Backend Pods"]
-        DEP --> PODS
         NODES --> PODS
+        CONFIG["ConfigMap + Kubernetes Secret"] --> PODS
     end
 
-    subgraph DEPS["Data + External Dependencies"]
-        PODS --> REDIS["ElastiCache Redis"]
-        PODS --> DB["Database"]
-        PODS --> GP["Google Places API"]
+    subgraph DEPS["Data, Telemetry, and External Services"]
+        PODS --> REDIS["ElastiCache Redis<br/>30-minute check-in dedupe"]
+        PODS --> DB["Postgres / Supabase<br/>(environment-dependent)"]
+        PODS --> GP["Google Places API<br/>nearby search only"]
+        PODS --> CW["CloudWatch Logs / Insights"]
+        SECRETS["AWS Secrets Manager<br/>infrastructure secrets"]
+        SECRETS -. supplies secret material .-> CONFIG
     end
 ```
 
 Caption:
-Route 53 sends public traffic to CloudFront, which serves the S3 frontend by default and routes `/api` traffic to the EKS ingress ALB. Argo CD reconciles Helm-managed Kubernetes resources, HPA adjusts pod count, Karpenter manages worker-node capacity, and backend pods depend on Redis, the database, and Google Places.
+CloudFront is the only public entry point. It serves frontend routes from S3 and forwards explicit API path families to the EKS ingress ALB with an internal origin header. WAF protects the browser-facing search path, Redis coordinates a 30-minute check-in cooldown across pods, and the API degrades safely if Redis is unavailable.
 
 ## Frontend Path
 
@@ -63,7 +69,6 @@ Route 53 sends public traffic to CloudFront, which serves the S3 frontend by def
 - usage telemetry is selectively emitted for `/places*` and `/checkin*`
 - repeat check-ins are coordinated through Redis TTL keys so EKS pods share the same cooldown state
 - `/api/places/*` remains the better path for CLI and scripted verification traffic when `/places/*` browser protections intentionally block HTTP-library clients
-- the legacy ECS service is scaled to `0` and retained only as a warm rollback path during the current soak
 
 ## Edge Security Model
 
@@ -98,9 +103,9 @@ Route 53 sends public traffic to CloudFront, which serves the S3 frontend by def
 
 ### Environment Bulkhead
 
-- the live service still runs from the `dev` stack today
-- the `prod` stack is scaffolded for a future environment split
-- the intended end state is promotion between environments instead of treating one stack as everything
+- `prod` owns `busynow.app`, the live backend, Redis, observability, and GitOps reconciliation
+- `dev` is ephemeral and recreated only for focused sandbox work
+- immutable artifacts and Git-managed configuration keep promotion explicit
 
 ## Delivery Model
 
@@ -134,6 +139,10 @@ This provides the Kubernetes runtime and operational surface BusyNow now uses fo
 
 Argo CD keeps the live cluster aligned with the Git-managed Helm configuration so infrastructure intent and application rollout state stay visible in one place.
 
+### HPA + Karpenter For Elastic Capacity
+
+HPA adjusts backend replica count from workload demand, while Karpenter provides node capacity when scheduled workloads need additional room. This keeps pod scaling and infrastructure scaling as separate control loops.
+
 ### ALB In Front Of EKS
 
 The ALB provides a clear control point for request routing, health checks, and backend access protection.
@@ -146,16 +155,17 @@ Terraform keeps infrastructure changes reviewable, repeatable, and easier to und
 
 - GitHub Actions authenticates to AWS with OIDC
 - the current live EKS backend gets runtime configuration through Kubernetes `ConfigMap` and `Secret` objects
+- AWS Secrets Manager remains the managed store for infrastructure secret material
 - backend dependencies like Google Places are injected at runtime
 - optional runtime coordination like Redis is also injected through environment configuration such as `REDIS_URL`
 
 ## Current Runtime Status
 
-BusyNow completed the first CloudFront backend cutover to EKS on May 16, 2026.
-
-- the public app now serves backend traffic through the EKS-backed CloudFront origin
-- ECS is scaled to `0` and kept briefly as a warm rollback target during soak
-- the old `busynow-alb` is no longer the live public backend origin
+- `busynow.app` is served by the production CloudFront distribution
+- protected API traffic reaches the Express service through the EKS-backed ALB ingress
+- Helm and Argo CD define and reconcile the production Kubernetes workload
+- HPA manages pod replicas and Karpenter supplies elastic node capacity
+- development infrastructure is ephemeral and is not part of the live request path
 
 ## Related Documents
 

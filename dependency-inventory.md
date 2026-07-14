@@ -1,10 +1,13 @@
 # BusyNow Dependency Inventory
 
-Last updated: 2026-05-19
+Last updated: 2026-07-14
 
 This document summarizes the main live runtime and infrastructure dependencies that shape BusyNow's current public architecture.
 
 ## Core Public Path
+
+- `AWS Route 53`
+  - resolves the public application domain to CloudFront
 
 - `AWS CloudFront`
   - the only public entry point
@@ -23,7 +26,24 @@ This document summarizes the main live runtime and infrastructure dependencies t
 
 - `AWS EKS`
   - runs the live backend application
-  - the backend migration from ECS to EKS is now part of the live production story
+  - provides the Kubernetes control plane for the production runtime
+
+- `Kubernetes Service and Ingress`
+  - connect the ALB target path to the Express backend pods
+
+## Delivery And Scaling
+
+- `Amazon ECR`
+  - stores immutable backend container images
+
+- `Helm and Argo CD`
+  - define the production workload in Git and reconcile it into EKS
+
+- `Horizontal Pod Autoscaler (HPA)`
+  - adjusts backend pod replicas from workload demand
+
+- `Karpenter`
+  - provides elastic worker-node capacity when scheduled workloads need more room
 
 ## Coordination, Persistence, And Secrets
 
@@ -63,7 +83,7 @@ This document summarizes the main live runtime and infrastructure dependencies t
 - Google Places is important, but only nearby search depends on it directly
 - Postgres and Supabase are environment-dependent persistence options, so neither should be described as the only required backend by default
 - Redis is intentionally scoped to ephemeral coordination so its failure mode is narrower than the core read path
-- the legacy ECS service and old `busynow-alb` remain relevant only as rollback assets during the current soak period, not as part of the live public path
+- production owns the live service; development infrastructure is ephemeral and remains outside the public request path
 
 ## Related Documents
 

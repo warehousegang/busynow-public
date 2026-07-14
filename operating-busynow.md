@@ -53,7 +53,8 @@ Clean documentation reduces that ambiguity.
 - Redis-backed cooldown coordination for repeat check-ins across EKS pods
 - selective `[USAGE_EVENT]` and `[CHECKIN_EVENT]` logging in CloudWatch
 - explicit rollback workflows instead of relying on ad hoc recovery
-- keeping the old ECS path available only as a short-term rollback asset during the EKS soak period
+- Helm and Argo CD reconciliation for reviewable production changes
+- HPA and Karpenter control loops for pod and node capacity
 
 These decisions do not remove operational risk, but they make the service easier to reason about and recover.
 
@@ -67,7 +68,7 @@ The main operating gaps today are:
 - drills and follow-through still need more structure
 - post-deploy verification of protected route behavior and Redis connectivity still needs to become routine
 - operator response to burn-rate and budget trends still needs repetition
-- the old ECS rollback path still needs a clear retirement decision once the EKS soak period is complete
+- externalized secret delivery would reduce manual Kubernetes Secret handling
 
 ## What Needs To Improve Next
 
@@ -75,7 +76,7 @@ The main operating gaps today are:
 - clearer operator habits for when degraded mode becomes too frequent
 - repeatable smoke checks for `/api/places/*`, `/status*`, and `/checkin*`
 - broader runbook coverage for secret rotation, cost review, and recurring failure patterns
-- stronger separation between development and production environments
+- more repeatable ephemeral-development environment workflows
 - clearer day-two habits around CloudWatch Insights queries for usage and check-in events
 
 ## Reliability Boundaries
@@ -87,11 +88,12 @@ The main BusyNow operating bulkheads today are:
 - repeat check-in coordination is isolated to Redis TTL state instead of turning the persistence backend into a lock
 - frontend and backend release workflows stay separate so one rollback does not automatically imply the other
 - Google Places failures can stay scoped to nearby search instead of becoming a full-service outage
-- the next major structural boundary is finishing the move from one live stack to clearer `dev` and `prod` responsibilities, then retiring the old ECS rollback path
+- `prod` owns the live service while `dev` is ephemeral and recreated only for focused sandbox work
+- Argo CD continually reconciles the production workload from Git-managed Helm configuration
 
 ## Live Stack Note
 
-The current public app is still served from the live `dev` stack. Public backend traffic is now on EKS. The legacy ECS path is retained only as a short-term rollback asset during the current soak period.
+The public application is served from the production stack. CloudFront is the only public entry point, protected backend traffic runs through the EKS-backed ALB ingress, and development infrastructure remains torn down by default when it is not needed.
 
 ## Related Documents
 

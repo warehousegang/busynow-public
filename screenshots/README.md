@@ -1,43 +1,44 @@
 # BusyNow Screenshots
 
-This directory holds public-facing BusyNow screenshots that can be shared alongside the public documentation.
+This directory contains public-facing product screenshots used by the repository documentation.
 
-## Current MockMode Gallery
+## Product Gallery
+
+The gallery uses deterministic MockMode data to present repeatable product states without generating paid Google Places traffic or exposing user activity.
 
 ### Landing page
 
-Current MockMode landing page:
+Landing page:
 
 ![BusyNow landing page mockmode](landing-page-mockmode-may-2026.png)
 
 ### How it works
 
-Current explanatory and preview section:
+Product explanation and preview:
 
 ![BusyNow how it works mockmode](how-it-works-mockmode-may-2026.png)
 
 ### Place detail
 
-Current selected-place detail and update flow:
+Selected-place detail and one-tap update flow:
 
 ![BusyNow place detail mockmode](place-detail-mockmode-may-2026.png)
 
 ### List view
 
-Current nearby places list view:
+Nearby places list:
 
 ![BusyNow list view mockmode](list-view-mockmode-may-2026.png)
 
 ### Map view
 
-Current nearby places map view:
+Nearby places map:
 
 ![BusyNow map view mockmode](map-view-mockmode-may-2026.png)
 
-## Older Reference Shots
+## Historical Product Milestone
 
-- `api-go-live-day-one-april-2026.png` captures an earlier milestone from the first live API day
-- older architecture images remain in the repo only as historical artifacts and are not the source of truth for the live system
+- `api-go-live-day-one-april-2026.png` records the first public API milestone and is retained as product history
 
 ## Tips
 
@@ -45,3 +46,4 @@ Current nearby places map view:
 - Redact any secrets, internal hostnames, or AWS account details
 - Use consistent widths so the README looks polished
 - If you add screenshots to the public repo, reference them from the public `README.md`
+- Keep architecture diagrams in `architecture.md` so the current system has one documented source of truth

@@ -11,13 +11,15 @@ The internal runbook set now covers:
 
 - frontend deploy and rollback
 - EKS backend deploy and validation
-- legacy ECS rollback path during soak
+- GitOps and Argo CD drift
+- Karpenter capacity validation
 - Google Places upstream degradation
 - runtime secret or environment mismatch
 - edge protection drift
 - persistence backend unavailable
+- DNS, TLS, and frontend map-provider degradation
 
-That coverage matters because the public app is still served from the live `dev` stack, but the backend path now runs on EKS instead of ECS. The operating notes describe the system as it actually runs today instead of assuming a future-state `prod` environment that is not yet carrying traffic.
+That coverage reflects the live production system: CloudFront and S3 deliver the frontend, while protected backend traffic runs through the ALB ingress to Amazon EKS.
 
 ## Current Bulkheads
 
@@ -61,17 +63,18 @@ This keeps horizontally scaled EKS pods consistent without turning Redis into a 
 Frontend and backend delivery are intentionally separated.
 
 - frontend deploys move immutable build artifacts through S3 and CloudFront
-- backend deploys use explicit image tags on the EKS `Deployment` instead of relying on `latest`
+- backend deploys use explicit image tags in Helm values instead of relying on `latest`
+- Argo CD reconciles reviewed Git state into the production cluster
 - rollback paths exist for both halves of the system
 
 ### Environment Bulkhead
 
-The current live system still runs on one stack, but the environment split is now scaffolded.
+Production and development have distinct responsibilities.
 
-- `dev` currently backs the live public app
-- `prod` exists as a Terraform skeleton for a cleaner future separation
+- `prod` owns `busynow.app`, the live EKS backend, Redis, observability, and GitOps reconciliation
+- `dev` is ephemeral and stays torn down unless a focused sandbox is needed
 
-That is not a full bulkhead yet, but it is the next structural boundary needed to make changes safer.
+This avoids paying for a duplicate always-on runtime while keeping development work separate from the public service.
 
 ## What Still Needs Work
 
@@ -79,8 +82,8 @@ That is not a full bulkhead yet, but it is the next structural boundary needed t
 - regular rollback drills and post-incident review habits
 - broader runbook coverage for secret rotation and cost-review procedures
 - repeatable post-deploy checks for protected API path reachability and Redis connectivity
-- finishing the move from one live stack to distinct `dev` and `prod` responsibilities
-- retiring the old ECS rollback path once the EKS soak period is complete
+- more routine GitOps drift, rollback, and Karpenter scaling drills
+- moving backend secrets to an external secret controller instead of manually managed Kubernetes Secrets
 
 ## Related Documents
 

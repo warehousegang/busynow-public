@@ -1,6 +1,6 @@
 # BusyNow
 
-BusyNow is a live crowd-visibility app for discovering nearby places, checking current crowd signals, and submitting one-tap updates without creating an account.
+BusyNow is a production crowd-visibility application for discovering nearby places, checking current crowd signals, and submitting one-tap updates without creating an account.
 
 Live app:
 
@@ -8,22 +8,23 @@ Live app:
 
 Infrastructure note:
 
-- the current public app is still served from the live `dev` stack
-- the live public backend now runs through `CloudFront -> EKS-backed ALB ingress`
-- the legacy ECS path is retained only as a short-term rollback asset during the current soak period
-- a separate `prod` Terraform skeleton now exists for the eventual environment split
+- `busynow.app` is backed by the production AWS stack
+- protected API traffic follows `CloudFront -> ALB ingress -> Amazon EKS`
+- development infrastructure is ephemeral and remains torn down by default
 
 ## At A Glance
 
 - Product: lightweight crowd visibility for nearby places
-- Frontend: React served through CloudFront and S3
-- Backend: Express on Amazon EKS behind an ALB ingress
+- Frontend: React and Vite assets served through CloudFront and S3
+- Backend: Express on Amazon EKS behind an ALB ingress and Kubernetes `Service`
 - Edge model: CloudFront is the only public entry point
 - Routing: explicit CloudFront behaviors for `/places*`, `/api/places*`, `/status*`, `/api/status*`, `/checkin*`, and `/api/checkin*`
+- Delivery: immutable ECR images, Helm, Argo CD, GitHub Actions, and AWS OIDC
+- Scaling: HPA for pod replicas and Karpenter for elastic node capacity
 - Coordination: anonymous browser IDs plus Redis-backed check-in dedupe
 - Persistence: optional Postgres or Supabase depending on environment and runtime configuration
 - Observability: selective structured usage and check-in event logs in CloudWatch
-- Delivery: GitHub Actions with AWS OIDC and Terraform-managed infrastructure
+- Infrastructure: Terraform-managed AWS resources with Git-managed Kubernetes configuration
 
 ## Current Live Behavior
 
@@ -42,7 +43,7 @@ BusyNow is intentionally small at the product layer and deeper at the systems la
 The interesting part is not only that a user can search for nearby places. The interesting part is the operating model around that flow:
 
 - how traffic is routed and protected at the edge
-- how the backend was migrated from ECS to EKS without changing the public frontend path
+- how GitOps keeps the live Kubernetes workload aligned with reviewed configuration
 - how browser-facing `/places/*` and CLI-friendly `/api/places/*` intentionally behave differently
 - how third-party API usage affects reliability and cost
 - how anonymous browser IDs and selective telemetry stay useful without adding auth
@@ -68,7 +69,8 @@ The interesting part is not only that a user can search for nearby places. The i
 - direct ALB access is blocked before listener evaluation by the current security posture
 - Redis provides TTL-backed check-in dedupe coordination across EKS pods
 - CloudWatch Logs and Insights provide structured operational visibility
-- the backend migration from ECS to EKS kept the existing edge trust and routing model intact
+- Helm and Argo CD provide reviewable, declarative backend delivery
+- HPA and Karpenter separate application scaling from worker-node capacity
 
 ## Public Documentation
 
@@ -85,17 +87,19 @@ The interesting part is not only that a user can search for nearby places. The i
 - [Platform Engineering Roadmap](platform-roadmap.md)
 - [Screenshots Guide](screenshots/README.md)
 
-## Current Frontend Views
+## Product Preview
+
+These screenshots use deterministic MockMode data so representative product states can be shown without generating paid upstream API traffic.
 
 ### Landing page
 
-Current MockMode landing page:
+Landing page:
 
 ![BusyNow landing page mockmode](screenshots/landing-page-mockmode-may-2026.png)
 
 ### App preview
 
-Current MockMode list view:
+Nearby places list:
 
 ![BusyNow list view mockmode](screenshots/list-view-mockmode-may-2026.png)
 
@@ -105,11 +109,12 @@ The next phase of BusyNow is less about inventing first-time operations work and
 
 - routine SLO and error-budget review
 - repeatable post-deploy smoke checks for `/api/places/*`, `/status*`, and `/checkin*`
-- rollback drills for the current EKS path
+- rollback and failure-recovery drills for the EKS path
 - more CloudWatch dashboards and saved Insights queries
-- better separation between the live `dev` stack and future `prod`
+- stronger GitOps drift detection and deployment verification
+- externalized Kubernetes secret management
 - continued abuse and cost control around Google Places traffic
 
 ## Public Notes
 
-The implementation repository may remain private while this public documentation stays shareable. That lets the current product, architecture, migration story, routing behavior, operational tradeoffs, and reliability model stay visible without exposing the source code itself.
+The implementation repository remains private while this public documentation stays shareable. It presents the current product, live architecture, routing behavior, operational tradeoffs, and reliability model without exposing application source or sensitive infrastructure details.

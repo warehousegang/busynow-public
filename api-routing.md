@@ -15,7 +15,6 @@ BusyNow exposes the frontend and backend through different layers of the same pu
 - `/checkin*` and `/api/checkin*` route to the backend for write traffic.
 - `/status*` and `/api/status*` route to the backend for place status reads.
 - all other routes continue to use the frontend S3 origin and SPA fallback behavior.
-- the old `busynow-alb` still exists during the current soak, but it is not on the live public path.
 
 ## Why Explicit API Behaviors Exist
 
@@ -23,9 +22,9 @@ CloudFront only forwards requests to the live backend when a path behavior match
 
 API behaviors must be declared before the frontend default behavior so CloudFront sends those requests to the ALB instead of the SPA fallback path.
 
-## Why `x-internal-key` Still Matters
+## Why `x-internal-key` Matters
 
-The EKS-backed ALB listeners keep a default fixed response for unmatched traffic.
+CloudFront is the supported public path to the backend. Network controls prevent direct internet traffic from reaching the protected ALB request path, and ALB listener rules provide a second routing boundary for traffic that reaches the listener.
 
 - requests only forward to the backend target group when both conditions match
 - the request path is on the approved API allowlist
@@ -34,7 +33,8 @@ The EKS-backed ALB listeners keep a default fixed response for unmatched traffic
 This preserves the current security boundary:
 
 - CloudFront can reach the API origin
-- direct ALB requests to protected paths without the internal header do not reach the backend
+- direct ALB access is not a supported public path and is blocked by the current security posture
+- requests without the expected internal header do not reach the Kubernetes backend service
 - frontend routing stays separate from backend routing
 
 ## Related Documents
