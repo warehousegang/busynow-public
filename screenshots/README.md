@@ -4,37 +4,25 @@ This directory contains public-facing product screenshots used by the repository
 
 ## Product Gallery
 
-The gallery uses deterministic MockMode data to present repeatable product states without generating paid Google Places traffic or exposing user activity.
+These July 2026 captures show the current responsive interface. The gallery uses deterministic MockMode data to present repeatable product states without generating paid Google Places traffic or exposing user activity.
 
-### Landing page
+### Landing And Product Overview
 
-Landing page:
+The landing page, neighborhood availability, map preview, product explanation, and crowd-signal preview:
 
-![BusyNow landing page mockmode](landing-page-mockmode-may-2026.png)
+![BusyNow landing page and product overview](landing-page-july-2026.png)
 
-### How it works
+### List And Check-In View
 
-Product explanation and preview:
+The search workspace, selected-place status, update controls, and nearby places list:
 
-![BusyNow how it works mockmode](how-it-works-mockmode-may-2026.png)
+![BusyNow desktop list and check-in view](list-view-july-2026.png)
 
-### Place detail
+### Map View
 
-Selected-place detail and one-tap update flow:
+The search workspace and geographic crowd-signal view:
 
-![BusyNow place detail mockmode](place-detail-mockmode-may-2026.png)
-
-### List view
-
-Nearby places list:
-
-![BusyNow list view mockmode](list-view-mockmode-may-2026.png)
-
-### Map view
-
-Nearby places map:
-
-![BusyNow map view mockmode](map-view-mockmode-may-2026.png)
+![BusyNow desktop map view](map-view-july-2026.png)
 
 ## Historical Product Milestone
 

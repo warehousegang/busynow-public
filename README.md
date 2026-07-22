@@ -89,19 +89,25 @@ The interesting part is not only that a user can search for nearby places. The i
 
 ## Product Preview
 
-These screenshots use deterministic MockMode data so representative product states can be shown without generating paid upstream API traffic.
+The current interface is shown with deterministic MockMode data so the complete product flow can be demonstrated without generating paid upstream API traffic or exposing user activity.
 
-### Landing page
+### Landing And Product Overview
 
-Landing page:
+The landing experience introduces the crowd-signal workflow, supported neighborhoods, live map preview, and three-step product model.
 
-![BusyNow landing page mockmode](screenshots/landing-page-mockmode-may-2026.png)
+![BusyNow landing page and product overview](screenshots/landing-page-july-2026.png)
 
-### App preview
+### List And Check-In View
 
-Nearby places list:
+The desktop workspace keeps the selected place, latest signal, one-tap update controls, and nearby results visible together.
 
-![BusyNow list view mockmode](screenshots/list-view-mockmode-may-2026.png)
+![BusyNow desktop list and check-in view](screenshots/list-view-july-2026.png)
+
+### Map View
+
+The map workspace uses the same live crowd-signal states for geographic discovery and quick comparison.
+
+![BusyNow desktop map view](screenshots/map-view-july-2026.png)
 
 ## Current Focus
 
